@@ -12,7 +12,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async register(signupDto: SignupDto): Promise<Tokens> {
+  async signup(signupDto: SignupDto): Promise<Tokens> {
     const isEmailUsed = await this.prisma.user.findUnique({
       where: { email: signupDto.email },
     });
