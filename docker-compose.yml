@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./todo-api
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: ${DB_PORT}
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_DB: ${POSTGRES_DB}
+    ports:
+      - "${API_PORT}:3000"
+    depends_on:
+      - db
+      
+volumes:
+  db_data:
