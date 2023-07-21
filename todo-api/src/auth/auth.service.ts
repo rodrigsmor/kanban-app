@@ -10,7 +10,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async signup(signupDto: SignupDto): Promise<Tokens> {
     const isEmailUsed = await this.prisma.user.findUnique({
