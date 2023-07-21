@@ -25,22 +25,22 @@ describe('AuthService', () => {
     prismaService = moduleRef.get<PrismaService>(PrismaService);
   });
 
+  const signupDto: SignupDto = {
+    firstName: 'User',
+    password: 'password',
+    lastName: 'Last name',
+    email: 'user@example.com',
+  };
+
+  const newUser: User = {
+    id: 0,
+    isAdmin: false,
+    profilePicture: '',
+    password,
+    ...signupDto,
+  };
+
   describe('signup', () => {
-    const signupDto: SignupDto = {
-      firstName: 'User',
-      password: 'password',
-      lastName: 'Last name',
-      email: 'user@example.com',
-    };
-
-    const newUser: User = {
-      id: 0,
-      isAdmin: false,
-      profilePicture: '',
-      password,
-      ...signupDto,
-    };
-
     it('should create a new user and return tokens', async () => {
       const expectedTokens: Tokens = {
         access_token: 'test_access_token',
@@ -76,6 +76,15 @@ describe('AuthService', () => {
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { email: signupDto.email },
       });
+    });
+  });
+
+  describe('generateTokens', () => {
+    const jwtSecret = process.env.JWT_SECRET;
+
+    it('should be generate tokens', async () => {
+      const tokens = authService.generateTokens(newUser.id, newUser.email);
+      expect(jwtService.signAsync).toBeCalledTimes(2);
     });
   });
 });
