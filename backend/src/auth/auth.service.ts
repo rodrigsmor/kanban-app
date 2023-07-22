@@ -1,9 +1,14 @@
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Tokens } from './types';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { AuthDto, SignupDto } from './dto';
-import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -35,8 +40,27 @@ export class AuthService {
     return tokens;
   }
 
-  async validateUser(dto: AuthDto) {
-    //
+  async login(authDto: AuthDto): Promise<Tokens> {
+    const user = await this.validateUser(authDto);
+
+    const tokens: Tokens = await this.generateTokens(user.id, user.email);
+
+    return tokens;
+  }
+
+  async validateUser(dto: AuthDto): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (user && (await bcrypt.compare(dto.password, user.password))) {
+      delete user.password;
+      return user;
+    } else {
+      throw new UnauthorizedException(
+        'The credentials provided are incorrect.',
+      );
+    }
   }
 
   async generateTokens(sub: number, email: string): Promise<Tokens> {
