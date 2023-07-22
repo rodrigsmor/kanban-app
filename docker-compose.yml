@@ -15,6 +15,7 @@ services:
     build:
       context: ./backend
     environment:
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}?schema=public
     ports:
       - "${API_PORT}:3000"
