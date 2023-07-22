@@ -82,9 +82,37 @@ describe('AuthService', () => {
   describe('generateTokens', () => {
     const jwtSecret = process.env.JWT_SECRET;
 
-    it('should be generate tokens', async () => {
-      const tokens = authService.generateTokens(newUser.id, newUser.email);
-      expect(jwtService.signAsync).toBeCalledTimes(2);
+    it('should be generate access and refresh tokens', async () => {
+      const jwtServiceMock = {
+        signAsync: jest
+          .fn()
+          .mockImplementationOnce(() => 'access_token_mock')
+          .mockImplementationOnce(() => 'refresh_token_mock'),
+      };
+
+      const result = await authService.generateTokens.call(
+        { jwtService: jwtServiceMock },
+        1,
+        'user@test.com',
+      );
+
+      expect(result).toEqual({
+        access_token: 'access_token_mock',
+        refresh_token: 'refresh_token_mock',
+      });
+
+      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+        { sub: 1, email: 'user@test.com' },
+        { secret: `${jwtSecret}-access`, expiresIn: 60 * 80 },
+      );
+
+      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+        { sub: 1, email: 'user@test.com' },
+        {
+          secret: `${jwtSecret}-refresh`,
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
     });
   });
 });
