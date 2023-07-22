@@ -13,7 +13,7 @@ services:
 
   backend:
     build:
-      context: ./todo-api
+      context: ./backend
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}?schema=public
     ports:
