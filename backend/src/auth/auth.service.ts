@@ -77,6 +77,36 @@ export class AuthService {
       ),
     ]);
 
+    await this.prisma.refreshToken.create({
+      data: {
+        refreshToken: refresh_token,
+        userId: sub,
+      },
+    });
+
     return { access_token, refresh_token };
+  }
+
+  async validateRefreshTokens(token: string): Promise<Tokens> {
+    try {
+      const payload = this.jwtService.verify(token);
+
+      const refreshToken = await this.prisma.refreshToken.findUnique({
+        where: { refreshToken: token },
+      });
+
+      if (!refreshToken)
+        throw new UnauthorizedException(
+          'The credential provided is incorrect.',
+        );
+
+      await this.prisma.refreshToken.delete({
+        where: { id: refreshToken.id },
+      });
+
+      return this.generateTokens(payload.sub, payload.email);
+    } catch (error) {
+      throw new UnauthorizedException('The credential provided is incorrect.');
+    }
   }
 }

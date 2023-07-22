@@ -18,4 +18,10 @@ export class AuthController {
   async login(@Body() loginDto: AuthDto): Promise<Tokens> {
     return this.authService.login(loginDto);
   }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async refresh(@Body() refreshToken: string): Promise<Tokens> {
+    return this.authService.validateRefreshTokens(refreshToken);
+  }
 }
