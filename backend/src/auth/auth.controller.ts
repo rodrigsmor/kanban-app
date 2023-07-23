@@ -21,7 +21,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.ACCEPTED)
-  async refresh(@Body() refreshToken: string): Promise<Tokens> {
+  async refresh(@Body('refreshToken') refreshToken: string): Promise<Tokens> {
     return this.authService.validateRefreshTokens(refreshToken);
   }
 }

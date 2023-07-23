@@ -64,7 +64,7 @@ export class AuthService {
   }
 
   async generateTokens(sub: number, email: string): Promise<Tokens> {
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = process.env.JWT_SECRET_KEY;
 
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(
@@ -87,12 +87,14 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
-  async validateRefreshTokens(token: string): Promise<Tokens> {
+  async validateRefreshTokens(refreshToken: string): Promise<Tokens> {
     try {
-      const payload = this.jwtService.verify(token);
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: `${process.env.JWT_SECRET_KEY}-refresh`,
+      });
 
-      const refreshToken = await this.prisma.refreshToken.findUnique({
-        where: { refreshToken: token },
+      const refreshTokenDb = await this.prisma.refreshToken.findUnique({
+        where: { refreshToken },
       });
 
       if (!refreshToken)
@@ -101,12 +103,14 @@ export class AuthService {
         );
 
       await this.prisma.refreshToken.delete({
-        where: { id: refreshToken.id },
+        where: { id: refreshTokenDb.id },
       });
 
       return this.generateTokens(payload.sub, payload.email);
     } catch (error) {
-      throw new UnauthorizedException('The credential provided is incorrect.');
+      throw new UnauthorizedException(
+        error?.message || 'The credential provided is incorrect.',
+      );
     }
   }
 }
