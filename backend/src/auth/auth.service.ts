@@ -48,6 +48,18 @@ export class AuthService {
     return tokens;
   }
 
+  async logout(refreshToken: string) {
+    try {
+      await this.prisma.refreshToken.delete({
+        where: { refreshToken },
+      });
+    } catch (error) {
+      throw new BadRequestException(
+        error?.message || 'The refresh token does not exist',
+      );
+    }
+  }
+
   async validateUser(dto: AuthDto): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },

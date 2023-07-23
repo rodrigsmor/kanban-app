@@ -24,4 +24,10 @@ export class AuthController {
   async refresh(@Body('refreshToken') refreshToken: string): Promise<Tokens> {
     return this.authService.validateRefreshTokens(refreshToken);
   }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async logout(@Body() refreshToken: string) {
+    return this.authService.logout(refreshToken);
+  }
 }
