@@ -40,13 +40,13 @@ describe('AuthService', () => {
     ...signupDto,
   };
 
+  const expectedTokens: Tokens = {
+    access_token: 'access_token_test',
+    refresh_token: 'refresh_token_test',
+  };
+
   describe('signup', () => {
     it('should create a new user and return tokens', async () => {
-      const expectedTokens: Tokens = {
-        access_token: 'test_access_token',
-        refresh_token: 'test_refresh_token',
-      };
-
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
       jest.spyOn(prismaService.user, 'create').mockResolvedValue(newUser);
       jest
@@ -79,6 +79,32 @@ describe('AuthService', () => {
     });
   });
 
+  describe('login', () => {
+    const user: User = {
+      email: 'user@test.com',
+      firstName: 'Test name',
+      lastName: 'Test last name',
+      id: 0,
+      isAdmin: false,
+      password: '',
+      profilePicture: '',
+    };
+
+    it('should authenticate user and return new tokens', async () => {
+      jest.spyOn(authService, 'validateUser').mockResolvedValueOnce(user);
+      jest
+        .spyOn(authService, 'generateTokens')
+        .mockResolvedValueOnce(expectedTokens);
+
+      const generatedTokens = await authService.login({
+        email: 'user@test.com',
+        password: 'very-secure-password',
+      });
+
+      expect(generatedTokens).toEqual(expectedTokens);
+    });
+  });
+
   describe('generateTokens', () => {
     const jwtSecret = process.env.JWT_SECRET;
 
@@ -89,6 +115,14 @@ describe('AuthService', () => {
           .mockImplementationOnce(() => 'access_token_mock')
           .mockImplementationOnce(() => 'refresh_token_mock'),
       };
+
+      jest.spyOn(prismaService.refreshToken, 'create').mockImplementation();
+
+      // prismaService.refreshToken.create = jest.fn().mockResolvedValue({
+      //   id: 0,
+      //   userId: 1,
+      //   refreshToken: 'some-refresh-token',
+      // });
 
       const result = await authService.generateTokens.call(
         { jwtService: jwtServiceMock },
@@ -113,6 +147,13 @@ describe('AuthService', () => {
           expiresIn: 60 * 60 * 24 * 7,
         },
       );
+
+      expect(prismaService.refreshToken.create).toHaveBeenCalledWith({
+        data: {
+          refreshToken: 'refresh_token_mock',
+          userId: 1,
+        },
+      });
     });
   });
 });
