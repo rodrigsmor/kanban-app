@@ -105,55 +105,54 @@ describe('AuthService', () => {
     });
   });
 
-  describe('generateTokens', () => {
-    const jwtSecret = process.env.JWT_SECRET;
+  const jwtSecret = process.env.JWT_SECRET_KEY;
+  it('should be generate access and refresh tokens', async () => {
+    const jwtServiceMock = {
+      signAsync: jest
+        .fn()
+        .mockImplementationOnce(() => 'access_token_mock')
+        .mockImplementationOnce(() => 'refresh_token_mock'),
+    };
 
-    it('should be generate access and refresh tokens', async () => {
-      const jwtServiceMock = {
-        signAsync: jest
-          .fn()
-          .mockImplementationOnce(() => 'access_token_mock')
-          .mockImplementationOnce(() => 'refresh_token_mock'),
-      };
-
-      jest.spyOn(prismaService.refreshToken, 'create').mockImplementation();
-
-      // prismaService.refreshToken.create = jest.fn().mockResolvedValue({
-      //   id: 0,
-      //   userId: 1,
-      //   refreshToken: 'some-refresh-token',
-      // });
-
-      const result = await authService.generateTokens.call(
-        { jwtService: jwtServiceMock },
-        1,
-        'user@test.com',
-      );
-
-      expect(result).toEqual({
-        access_token: 'access_token_mock',
-        refresh_token: 'refresh_token_mock',
-      });
-
-      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
-        { sub: 1, email: 'user@test.com' },
-        { secret: `${jwtSecret}-access`, expiresIn: 60 * 80 },
-      );
-
-      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
-        { sub: 1, email: 'user@test.com' },
-        {
-          secret: `${jwtSecret}-refresh`,
-          expiresIn: 60 * 60 * 24 * 7,
-        },
-      );
-
-      expect(prismaService.refreshToken.create).toHaveBeenCalledWith({
-        data: {
-          refreshToken: 'refresh_token_mock',
+    const prismaServiceMock = {
+      refreshToken: {
+        create: jest.fn().mockResolvedValue({
+          id: 0,
           userId: 1,
-        },
-      });
+          refreshToken: 'refresh_token_mock',
+        }),
+      },
+    };
+
+    const result = await authService.generateTokens.call(
+      { jwtService: jwtServiceMock, prisma: prismaServiceMock },
+      1,
+      'user@test.com',
+    );
+
+    expect(result).toEqual({
+      access_token: 'access_token_mock',
+      refresh_token: 'refresh_token_mock',
+    });
+
+    expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+      { sub: 1, email: 'user@test.com' },
+      { secret: `${jwtSecret}-access`, expiresIn: 60 * 80 },
+    );
+
+    expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+      { sub: 1, email: 'user@test.com' },
+      {
+        secret: `${jwtSecret}-refresh`,
+        expiresIn: 60 * 60 * 24 * 7,
+      },
+    );
+
+    expect(prismaServiceMock.refreshToken.create).toHaveBeenCalledWith({
+      data: {
+        refreshToken: 'refresh_token_mock',
+        userId: 1,
+      },
     });
   });
 });
