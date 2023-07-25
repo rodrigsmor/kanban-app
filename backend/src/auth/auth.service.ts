@@ -61,16 +61,24 @@ export class AuthService {
   }
 
   async validateUser(dto: AuthDto): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
 
-    if (user && (await bcrypt.compare(dto.password, user.password))) {
-      delete user.password;
-      return user;
-    } else {
+      const isPasswordMatch = await bcrypt.compare(dto.password, user.password);
+
+      if (user && isPasswordMatch) {
+        delete user.password;
+        return user;
+      } else {
+        throw new UnauthorizedException(
+          'The credentials provided are incorrect.',
+        );
+      }
+    } catch (e) {
       throw new UnauthorizedException(
-        'The credentials provided are incorrect.',
+        e.message || 'The credentials provided are incorrect',
       );
     }
   }
