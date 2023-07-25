@@ -5,7 +5,7 @@ import { AuthDto, SignupDto } from '../auth/dto';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { User } from '@prisma/client';
+import { RefreshToken, User } from '@prisma/client';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
@@ -159,7 +159,7 @@ describe('AuthService', () => {
     });
   });
 
-  describe('validateRefreshTokens', () => {
+  describe('validateUser', () => {
     it('should return the user when valid credentials are provided', async () => {
       const dto = {
         email: 'user@test.com',
@@ -216,6 +216,83 @@ describe('AuthService', () => {
       );
       expect(prismaService.user.findUnique).toHaveBeenCalledTimes(1);
       expect(bcrypt.compare).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('validateRefreshTokens', () => {
+    const invalidRefreshToken = 'refresh-token-wrong';
+    const secret_token = `${jwtSecret}-refresh`;
+
+    const testPayload = {
+      sub: 1,
+      email: 'user@test.com',
+    };
+
+    it('should throw an exception if refresh token does not exist', async () => {
+      jest
+        .spyOn(prismaService.refreshToken, 'findUnique')
+        .mockResolvedValueOnce(null);
+
+      const mockedVerifyAsync = jest.spyOn(jwtService, 'verifyAsync');
+      mockedVerifyAsync.mockResolvedValue(testPayload);
+
+      await expect(
+        authService.validateRefreshTokens(invalidRefreshToken),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(jwtService.verifyAsync).toBeCalledWith(invalidRefreshToken, {
+        secret: secret_token,
+      });
+    });
+
+    it('should throw an exception if refresh token is not valid', async () => {
+      jest
+        .spyOn(prismaService.refreshToken, 'findUnique')
+        .mockRejectedValue(null);
+
+      const mockedVerifyAsync = jest.spyOn(jwtService, 'verifyAsync');
+      mockedVerifyAsync.mockRejectedValue(new Error('Invalid credentials'));
+
+      await expect(
+        authService.validateRefreshTokens(invalidRefreshToken),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(prismaService.refreshToken.findUnique).not.toBeCalled();
+    });
+
+    it('should validate refresh token and return new tokens', async () => {
+      const refreshToken = 'refresh-token';
+      const refreshTokenDbMock: RefreshToken = {
+        createdAt: new Date(),
+        updateAt: new Date(),
+        id: 1,
+        refreshToken,
+        userId: 1,
+      };
+
+      jest
+        .spyOn(prismaService.refreshToken, 'findUnique')
+        .mockResolvedValueOnce(refreshTokenDbMock);
+
+      jest
+        .spyOn(prismaService.refreshToken, 'delete')
+        .mockResolvedValueOnce(null);
+
+      jest
+        .spyOn(authService, 'generateTokens')
+        .mockResolvedValueOnce(expectedTokens);
+
+      const mockedVerifyAsync = jest.spyOn(jwtService, 'verifyAsync');
+      mockedVerifyAsync.mockResolvedValue(testPayload);
+
+      const response = await authService.validateRefreshTokens(refreshToken);
+
+      expect(response).toEqual(expectedTokens);
+      expect(prismaService.refreshToken.delete).toBeCalledWith({
+        where: { id: refreshTokenDbMock.id },
+      });
+      expect(jwtService.verifyAsync).toBeCalledWith(refreshToken, {
+        secret: secret_token,
+      });
     });
   });
 });
