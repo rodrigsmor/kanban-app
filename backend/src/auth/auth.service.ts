@@ -83,7 +83,11 @@ export class AuthService {
     }
   }
 
-  async generateTokens(sub: number, email: string): Promise<Tokens> {
+  async generateTokens(
+    sub: number,
+    email: string,
+    oldRefreshToken?: string,
+  ): Promise<Tokens> {
     const jwtSecret = process.env.JWT_SECRET_KEY;
 
     const [access_token, refresh_token] = await Promise.all([
@@ -97,12 +101,20 @@ export class AuthService {
       ),
     ]);
 
-    await this.prisma.refreshToken.create({
-      data: {
-        refreshToken: refresh_token,
-        userId: sub,
-      },
-    });
+    if (oldRefreshToken) {
+      await this.prisma.refreshToken.update({
+        where: { refreshToken: oldRefreshToken },
+        data: { refreshToken: refresh_token, accessToken: access_token },
+      });
+    } else {
+      await this.prisma.refreshToken.create({
+        data: {
+          refreshToken: refresh_token,
+          accessToken: access_token,
+          userId: sub,
+        },
+      });
+    }
 
     return { access_token, refresh_token };
   }
@@ -117,16 +129,12 @@ export class AuthService {
         where: { refreshToken },
       });
 
-      if (!refreshToken)
+      if (!refreshTokenDb)
         throw new UnauthorizedException(
           'The credential provided is incorrect.',
         );
 
-      await this.prisma.refreshToken.delete({
-        where: { id: refreshTokenDb.id },
-      });
-
-      return this.generateTokens(payload.sub, payload.email);
+      return this.generateTokens(payload.sub, payload.email, refreshToken);
     } catch (error) {
       throw new UnauthorizedException(
         error?.message || 'The credential provided is incorrect.',
