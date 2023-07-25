@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from '../auth/types';
-import { SignupDto } from '../auth/dto';
+import { AuthDto, SignupDto } from '../auth/dto';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -13,7 +13,7 @@ describe('AuthService', () => {
   let authService: AuthService;
   let prismaService: PrismaService;
 
-  const password = bcrypt.hashSync('password123', 10);
+  const password = bcrypt.hashSync('test-password', 10);
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -27,9 +27,9 @@ describe('AuthService', () => {
 
   const signupDto: SignupDto = {
     firstName: 'User',
-    password: 'password',
+    password: 'test-password',
     lastName: 'Last name',
-    email: 'user@example.com',
+    email: 'user@test.com',
   };
 
   const newUser: User = {
@@ -44,6 +44,8 @@ describe('AuthService', () => {
     access_token: 'access_token_test',
     refresh_token: 'refresh_token_test',
   };
+
+  const jwtSecret = process.env.JWT_SECRET_KEY;
 
   describe('signup', () => {
     it('should create a new user and return tokens', async () => {
@@ -105,54 +107,91 @@ describe('AuthService', () => {
     });
   });
 
-  const jwtSecret = process.env.JWT_SECRET_KEY;
-  it('should be generate access and refresh tokens', async () => {
-    const jwtServiceMock = {
-      signAsync: jest
-        .fn()
-        .mockImplementationOnce(() => 'access_token_mock')
-        .mockImplementationOnce(() => 'refresh_token_mock'),
-    };
+  describe('generateTokens', () => {
+    it('should be generate access and refresh tokens', async () => {
+      const jwtServiceMock = {
+        signAsync: jest
+          .fn()
+          .mockImplementationOnce(() => 'access_token_mock')
+          .mockImplementationOnce(() => 'refresh_token_mock'),
+      };
 
-    const prismaServiceMock = {
-      refreshToken: {
-        create: jest.fn().mockResolvedValue({
-          id: 0,
-          userId: 1,
+      const prismaServiceMock = {
+        refreshToken: {
+          create: jest.fn().mockResolvedValue({
+            id: 0,
+            userId: 1,
+            refreshToken: 'refresh_token_mock',
+          }),
+        },
+      };
+
+      const result = await authService.generateTokens.call(
+        { jwtService: jwtServiceMock, prisma: prismaServiceMock },
+        1,
+        'user@test.com',
+      );
+
+      expect(result).toEqual({
+        access_token: 'access_token_mock',
+        refresh_token: 'refresh_token_mock',
+      });
+
+      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+        { sub: 1, email: 'user@test.com' },
+        { secret: `${jwtSecret}-access`, expiresIn: 60 * 80 },
+      );
+
+      expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+        { sub: 1, email: 'user@test.com' },
+        {
+          secret: `${jwtSecret}-refresh`,
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
+
+      expect(prismaServiceMock.refreshToken.create).toHaveBeenCalledWith({
+        data: {
           refreshToken: 'refresh_token_mock',
-        }),
-      },
-    };
+          userId: 1,
+        },
+      });
+    });
+  });
 
-    const result = await authService.generateTokens.call(
-      { jwtService: jwtServiceMock, prisma: prismaServiceMock },
-      1,
-      'user@test.com',
-    );
+  describe('validateRefreshTokens', () => {
+    it('should return a user if credentials are correct', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValueOnce(newUser);
 
-    expect(result).toEqual({
-      access_token: 'access_token_mock',
-      refresh_token: 'refresh_token_mock',
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(
+        Promise.resolve(true),
+      );
+
+      const dto: AuthDto = {
+        email: 'user@test.com',
+        password: 'test-password',
+      };
+
+      const user = await authService.validateUser(dto);
+
+      expect(user).toBeDefined();
+      expect(user.email).toBe('user@test.com');
+      expect(user.password).toBeUndefined();
     });
 
-    expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
-      { sub: 1, email: 'user@test.com' },
-      { secret: `${jwtSecret}-access`, expiresIn: 60 * 80 },
-    );
+    it('should throw UnauthorizedException if credentials are incorrect', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
 
-    expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
-      { sub: 1, email: 'user@test.com' },
-      {
-        secret: `${jwtSecret}-refresh`,
-        expiresIn: 60 * 60 * 24 * 7,
-      },
-    );
+      const dto: AuthDto = {
+        email: 'user@test.com',
+        password: 'wrong-password',
+      };
 
-    expect(prismaServiceMock.refreshToken.create).toHaveBeenCalledWith({
-      data: {
-        refreshToken: 'refresh_token_mock',
-        userId: 1,
-      },
+      await expect(authService.validateUser(dto)).rejects.toThrowError(
+        'The credentials provided are incorrect.',
+      );
     });
   });
 });
