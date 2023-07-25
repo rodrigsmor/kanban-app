@@ -23,6 +23,7 @@ model User {
 model RefreshToken {
   id                Int       @id @default(autoincrement())
   userId            Int
+  accessToken       String    @unique
   refreshToken      String    @unique
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
