@@ -13,13 +13,10 @@ services:
 
   backend:
     build:
-      context: ./todo-api
+      context: ./backend
     environment:
-      DATABASE_HOST: db
-      DATABASE_PORT: ${DB_PORT}
-      DATABASE_USER: ${POSTGRES_USER}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASE_DB: ${POSTGRES_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}?schema=public
     ports:
       - "${API_PORT}:3000"
     depends_on:
