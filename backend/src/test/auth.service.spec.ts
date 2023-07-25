@@ -6,7 +6,7 @@ import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { User } from '@prisma/client';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let jwtService: JwtService;
@@ -160,38 +160,62 @@ describe('AuthService', () => {
   });
 
   describe('validateRefreshTokens', () => {
-    it('should return a user if credentials are correct', async () => {
-      jest
-        .spyOn(prismaService.user, 'findUnique')
-        .mockResolvedValueOnce(newUser);
-
-      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(
-        Promise.resolve(true),
-      );
-
-      const dto: AuthDto = {
+    it('should return the user when valid credentials are provided', async () => {
+      const dto = {
         email: 'user@test.com',
         password: 'test-password',
       };
 
-      const user = await authService.validateUser(dto);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValueOnce(newUser);
 
-      expect(user).toBeDefined();
-      expect(user.email).toBe('user@test.com');
-      expect(user.password).toBeUndefined();
+      const bcryptCompare = jest.fn().mockResolvedValue(true);
+      (bcrypt.compare as jest.Mock) = bcryptCompare;
+
+      const result = await authService.validateUser(dto);
+
+      expect(result).toEqual(newUser);
+      expect(prismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(bcrypt.compare).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw UnauthorizedException if credentials are incorrect', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
-
-      const dto: AuthDto = {
+    it('should throw UnauthorizedException when invalid credentials are provided', async () => {
+      const dto = {
         email: 'user@test.com',
         password: 'wrong-password',
       };
 
-      await expect(authService.validateUser(dto)).rejects.toThrowError(
-        'The credentials provided are incorrect.',
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValueOnce(newUser);
+
+      const bcryptCompare = jest.fn().mockResolvedValue(false);
+      (bcrypt.compare as jest.Mock) = bcryptCompare;
+
+      await expect(authService.validateUser(dto)).rejects.toThrow(
+        UnauthorizedException,
       );
+      expect(prismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(bcrypt.compare).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw UnauthorizedException when the user does not exist', async () => {
+      const dto = {
+        email: 'user2@test.com',
+        password: 'test-password',
+      };
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
+
+      const bcryptCompare = jest.fn().mockResolvedValue(false);
+      (bcrypt.compare as jest.Mock) = bcryptCompare;
+
+      await expect(authService.validateUser(dto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(prismaService.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(bcrypt.compare).not.toHaveBeenCalled();
     });
   });
 });
