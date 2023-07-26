@@ -108,6 +108,33 @@ describe('AuthService', () => {
     });
   });
 
+  describe('logout', () => {
+    it('should throw an exception if refresh token does not exist', async () => {
+      jest
+        .spyOn(prismaService.refreshToken, 'delete')
+        .mockRejectedValueOnce(new Error('The refresh token does not exist'));
+
+      await expect(authService.logout('invalid-refresh-token')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prismaService.refreshToken.delete).toBeCalledWith({
+        where: { refreshToken: 'invalid-refresh-token' },
+      });
+    });
+
+    it('should effectively delete the refresh token to log out', async () => {
+      jest
+        .spyOn(prismaService.refreshToken, 'delete')
+        .mockResolvedValueOnce(null);
+
+      await authService.logout('refresh-token');
+
+      expect(prismaService.refreshToken.delete).toBeCalledWith({
+        where: { refreshToken: 'refresh-token' },
+      });
+    });
+  });
+
   describe('generateTokens', () => {
     const refreshTokenMockValue = {
       id: 0,
