@@ -54,9 +54,7 @@ export class AuthService {
         where: { refreshToken },
       });
     } catch (error) {
-      throw new BadRequestException(
-        error?.message || 'The refresh token does not exist',
-      );
+      throw new BadRequestException('The refresh token does not exist');
     }
   }
 
@@ -66,9 +64,14 @@ export class AuthService {
         where: { email: dto.email },
       });
 
+      if (!user)
+        throw new BadRequestException(
+          'The e-mail does not correspond to any account',
+        );
+
       const isPasswordMatch = await bcrypt.compare(dto.password, user.password);
 
-      if (user && isPasswordMatch) {
+      if (isPasswordMatch) {
         delete user.password;
         return user;
       } else {

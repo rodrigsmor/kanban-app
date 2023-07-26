@@ -27,7 +27,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.ACCEPTED)
-  async logout(@Body() refreshToken: string) {
+  async logout(@Body('refreshToken') refreshToken: string) {
     return this.authService.logout(refreshToken);
   }
 }
