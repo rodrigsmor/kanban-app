@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthDto, SignupDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
+import { JwtPayload } from '../utils/@types';
 
 @Injectable()
 export class AuthService {
@@ -137,10 +138,34 @@ export class AuthService {
           'The credential provided is incorrect.',
         );
 
+      console.log(payload);
       return this.generateTokens(payload.sub, payload.email, refreshToken);
     } catch (error) {
       throw new UnauthorizedException(
         error?.message || 'The credential provided is incorrect.',
+      );
+    }
+  }
+
+  async validateAccessToken(accessToken: string): Promise<JwtPayload> {
+    try {
+      const payload = await this.jwtService.verifyAsync(accessToken, {
+        secret: `${process.env.JWT_SECRET_KEY}-access`,
+      });
+
+      const { refreshToken } = await this.prisma.refreshToken.findUnique({
+        where: { accessToken },
+      });
+
+      if (!refreshToken)
+        throw new UnauthorizedException(
+          'The credential provided is incorrect.',
+        );
+
+      return payload;
+    } catch (error) {
+      throw new UnauthorizedException(
+        error?.message || 'The provided access token is invalid.',
       );
     }
   }
