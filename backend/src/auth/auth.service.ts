@@ -138,7 +138,6 @@ export class AuthService {
           'The credential provided is incorrect.',
         );
 
-      console.log(payload);
       return this.generateTokens(payload.sub, payload.email, refreshToken);
     } catch (error) {
       throw new UnauthorizedException(
