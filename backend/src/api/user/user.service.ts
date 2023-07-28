@@ -3,8 +3,10 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import path from 'path';
 import { UserDto } from './dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import * as bcrypt from 'bcryptjs';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
@@ -29,5 +31,24 @@ export class UserService {
         );
       }
     }
+  }
+
+  async updateProfilePicture(
+    userId: number,
+    picture: Express.Multer.File,
+  ): Promise<UserDto> {
+    const user: UserDto = await this.getCurrentUser(userId);
+
+    const mimetypeIndex = picture.originalname.lastIndexOf('.');
+    const mimetype = picture.originalname.substring(mimetypeIndex + 1);
+
+    const newPicturePath = `${picture.path}.${mimetype}`;
+
+    const userUpdated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { profilePicture: newPicturePath },
+    });
+
+    return UserDto.fromUser(userUpdated);
   }
 }
