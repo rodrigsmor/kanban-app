@@ -2,6 +2,7 @@ import {
   MulterModuleOptions,
   MulterOptionsFactory,
 } from '@nestjs/platform-express';
+import { extname } from 'path';
 import { diskStorage } from 'multer';
 import { Injectable } from '@nestjs/common';
 
@@ -15,7 +16,8 @@ export class MulterConfigService implements MulterOptionsFactory {
         filename: (req, file, cb) => {
           const mimetypeIndex = file.originalname.lastIndexOf('.');
           const filename = file.originalname.substring(0, mimetypeIndex);
-          const newFilename = `${filename}-${crypto.randomUUID()}-${Date.now()}`;
+          const fileExtension = extname(file.originalname);
+          const newFilename = `${filename}-${crypto.randomUUID()}-${Date.now()}${fileExtension}`;
           return cb(null, newFilename);
         },
       }),

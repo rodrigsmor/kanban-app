@@ -3,10 +3,10 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import path from 'path';
 import { UserDto } from './dto';
-import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
+
+import * as fs from 'fs';
 
 @Injectable()
 export class UserService {
@@ -39,10 +39,11 @@ export class UserService {
   ): Promise<UserDto> {
     const user: UserDto = await this.getCurrentUser(userId);
 
-    const mimetypeIndex = picture.originalname.lastIndexOf('.');
-    const mimetype = picture.originalname.substring(mimetypeIndex + 1);
+    const newPicturePath = `${picture.path}`;
 
-    const newPicturePath = `${picture.path}.${mimetype}`;
+    if (user.profilePicture && fs.existsSync(user.profilePicture)) {
+      await this.deleteFile(user.profilePicture);
+    }
 
     const userUpdated = await this.prisma.user.update({
       where: { id: user.id },
@@ -50,5 +51,14 @@ export class UserService {
     });
 
     return UserDto.fromUser(userUpdated);
+  }
+
+  async deleteFile(filePath: string): Promise<void> {
+    try {
+      fs.unlinkSync(filePath);
+      console.log('it was deleted :)');
+    } catch (err) {
+      console.log('Was not possible to delete your file');
+    }
   }
 }
