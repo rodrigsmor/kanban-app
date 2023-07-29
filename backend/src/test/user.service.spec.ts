@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from '../api/user/dto/user.dto';
+import { BadRequestException } from '@nestjs/common';
 
 describe('UserService', () => {
   let userService: UserService;
@@ -38,6 +39,17 @@ describe('UserService', () => {
       const currentUser = await userService.getCurrentUser(0);
 
       expect(currentUser).toEqual(mockUserDto);
+      expect(prismaService.user.findUnique).toBeCalledWith({
+        where: { id: 0 },
+      });
+    });
+
+    it('should throw BadRequestException when getCurrentUser data fails', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
+
+      expect(userService.getCurrentUser(0)).rejects.toThrowError(
+        BadRequestException,
+      );
       expect(prismaService.user.findUnique).toBeCalledWith({
         where: { id: 0 },
       });

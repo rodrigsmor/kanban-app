@@ -13,24 +13,17 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getCurrentUser(userId: number): Promise<UserDto> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-      const userDto = UserDto.fromUser(user);
-      return userDto;
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw new BadRequestException(
-          'The entered account does not seem to exist.',
-        );
-      } else {
-        throw new InternalServerErrorException(
-          error?.message || 'Error getting your data.',
-        );
-      }
-    }
+    if (!user)
+      throw new BadRequestException(
+        'The entered account does not seem to exist.',
+      );
+
+    const userDto = UserDto.fromUser(user);
+    return userDto;
   }
 
   async updateUser(userId: number, newUserData: EditUserDto): Promise<UserDto> {
