@@ -3,34 +3,44 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import path from 'path';
-import { UserDto } from './dto';
-import * as bcrypt from 'bcryptjs';
+import { EditUserDto, UserDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
+
+import * as fs from 'fs';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getCurrentUser(userId: number): Promise<UserDto> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-      const userDto = UserDto.fromUser(user);
-      return userDto;
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw new BadRequestException(
-          'The entered account does not seem to exist.',
-        );
-      } else {
-        throw new InternalServerErrorException(
-          error?.message || 'Error getting your data.',
-        );
-      }
-    }
+    if (!user)
+      throw new BadRequestException(
+        'The entered account does not seem to exist.',
+      );
+
+    const userDto = UserDto.fromUser(user);
+    return userDto;
+  }
+
+  async updateUser(userId: number, newUserData: EditUserDto): Promise<UserDto> {
+    const user = this.getCurrentUser(userId);
+
+    if (!user)
+      throw new BadRequestException('cannot update a non-existent user');
+
+    const userUpdated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(newUserData.firstName && { firstName: newUserData.firstName }),
+        ...(newUserData.lastName && { lastName: newUserData.lastName }),
+      },
+    });
+
+    return UserDto.fromUser(userUpdated);
   }
 
   async updateProfilePicture(
@@ -39,10 +49,11 @@ export class UserService {
   ): Promise<UserDto> {
     const user: UserDto = await this.getCurrentUser(userId);
 
-    const mimetypeIndex = picture.originalname.lastIndexOf('.');
-    const mimetype = picture.originalname.substring(mimetypeIndex + 1);
+    const newPicturePath = `${picture.path}`;
 
-    const newPicturePath = `${picture.path}.${mimetype}`;
+    if (user.profilePicture && fs.existsSync(user.profilePicture)) {
+      await this.deleteFile(user.profilePicture);
+    }
 
     const userUpdated = await this.prisma.user.update({
       where: { id: user.id },
@@ -50,5 +61,14 @@ export class UserService {
     });
 
     return UserDto.fromUser(userUpdated);
+  }
+
+  async deleteFile(filePath: string): Promise<void> {
+    try {
+      fs.unlinkSync(filePath);
+      console.log('it was deleted :)');
+    } catch (err) {
+      console.log('Was not possible to delete your file');
+    }
   }
 }

@@ -1,10 +1,10 @@
+import * as bcrypt from 'bcryptjs';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from '../auth/types';
-import { AuthDto, SignupDto } from '../auth/dto';
+import { SignupDto } from '../auth/dto';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcryptjs';
 import { RefreshToken, User } from '@prisma/client';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 

@@ -1,8 +1,8 @@
 import { User } from '@prisma/client';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class UserDto {
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   id: number;
 

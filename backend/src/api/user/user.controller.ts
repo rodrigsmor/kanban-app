@@ -6,8 +6,10 @@ import {
   Patch,
   UseInterceptors,
   UploadedFile,
+  Put,
+  Body,
 } from '@nestjs/common';
-import { UserDto } from './dto';
+import { EditUserDto, UserDto } from './dto';
 import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
@@ -22,8 +24,17 @@ export class UserController {
     return this.userService.getCurrentUser(userId);
   }
 
+  @Put('/')
+  @HttpCode(HttpStatus.OK)
+  async updateCurrentUser(
+    @UserId() userId: number,
+    @Body() newUserData: EditUserDto,
+  ): Promise<UserDto> {
+    return this.userService.updateUser(userId, newUserData);
+  }
+
   @Patch('/profilePicture')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('profilePicture'))
   async updateProfilePicture(
     @UserId() userId: number,
