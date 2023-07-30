@@ -5,6 +5,7 @@ import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserDto } from '../api/user/dto/user.dto';
 import { BadRequestException } from '@nestjs/common';
+import { EditUserDto } from '../api/user/dto/edit-user.dto';
 
 describe('UserService', () => {
   let userService: UserService;
@@ -52,6 +53,83 @@ describe('UserService', () => {
       );
       expect(prismaService.user.findUnique).toBeCalledWith({
         where: { id: 0 },
+      });
+    });
+  });
+
+  describe('updateUser', () => {
+    const newUserData: EditUserDto = {
+      firstName: 'New user name',
+      lastName: 'New user last name',
+    };
+
+    it('should throw BadRequestException if the user does not exist', async () => {
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockImplementationOnce(() => null);
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValueOnce(null);
+
+      await expect(userService.updateUser(0, newUserData)).rejects.toThrowError(
+        BadRequestException,
+      );
+
+      expect(prismaService.user.findUnique).not.toBeCalled();
+      expect(prismaService.user.update).not.toBeCalled();
+    });
+
+    it('should update the user with provided data', async () => {
+      const updatedUserData: UserDto = {
+        ...mockUserDto,
+        ...newUserData,
+      };
+
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockImplementationOnce(async () => mockUserDto);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValueOnce({
+        ...user,
+        ...newUserData,
+      });
+
+      const result = await userService.updateUser(0, newUserData);
+
+      expect(result).toEqual(updatedUserData);
+      expect(prismaService.user.update).toBeCalledWith({
+        where: { id: 0 },
+        data: {
+          firstName: newUserData.firstName,
+          lastName: newUserData.lastName,
+        },
+      });
+    });
+
+    it('should only update the fields provided', async () => {
+      const newUserDataReduce: EditUserDto = {
+        lastName: 'Last name updated',
+      };
+
+      const updatedUserData: UserDto = {
+        ...mockUserDto,
+        ...newUserDataReduce,
+      };
+
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockImplementationOnce(async () => mockUserDto);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValueOnce({
+        ...user,
+        ...newUserDataReduce,
+      });
+
+      const result = await userService.updateUser(0, newUserDataReduce);
+
+      expect(result).toEqual(updatedUserData);
+      expect(prismaService.user.update).toBeCalledWith({
+        where: { id: 0 },
+        data: {
+          lastName: newUserDataReduce.lastName,
+        },
       });
     });
   });
