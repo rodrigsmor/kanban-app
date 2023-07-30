@@ -27,26 +27,20 @@ export class UserService {
   }
 
   async updateUser(userId: number, newUserData: EditUserDto): Promise<UserDto> {
-    try {
-      const user = this.getCurrentUser(userId);
+    const user = this.getCurrentUser(userId);
 
-      if (!user)
-        throw new BadRequestException('cannot update a non-existent user');
+    if (!user)
+      throw new BadRequestException('cannot update a non-existent user');
 
-      const userUpdated = await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          ...(newUserData.firstName && { firstName: newUserData.firstName }),
-          ...(newUserData.lastName && { lastName: newUserData.lastName }),
-        },
-      });
+    const userUpdated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(newUserData.firstName && { firstName: newUserData.firstName }),
+        ...(newUserData.lastName && { lastName: newUserData.lastName }),
+      },
+    });
 
-      return UserDto.fromUser(userUpdated);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        error?.message || 'It was not possible to update your details.',
-      );
-    }
+    return UserDto.fromUser(userUpdated);
   }
 
   async updateProfilePicture(
