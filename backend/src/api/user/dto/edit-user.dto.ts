@@ -5,11 +5,11 @@ export class EditUserDto {
     message: 'the first name must be a valid string',
   })
   @IsOptional()
-  firstName: string;
+  firstName?: string;
 
   @IsString({
     message: 'the last name must be a valid string',
   })
   @IsOptional()
-  lastName: string;
+  lastName?: string;
 }
