@@ -7,6 +7,9 @@ import { UserDto } from '../api/user/dto/user.dto';
 import { BadRequestException } from '@nestjs/common';
 import { EditUserDto } from '../api/user/dto/edit-user.dto';
 
+import * as fs from 'fs';
+import { Readable } from 'stream';
+
 describe('UserService', () => {
   let userService: UserService;
   let prismaService: PrismaService;
@@ -29,7 +32,7 @@ describe('UserService', () => {
     lastName: 'Test last name',
     isAdmin: false,
     password,
-    profilePicture: 'path-to-picture',
+    profilePicture: null,
   };
 
   const mockUserDto = UserDto.fromUser(user);
@@ -131,6 +134,84 @@ describe('UserService', () => {
           lastName: newUserDataReduce.lastName,
         },
       });
+    });
+  });
+
+  describe('updateProfilePicture', () => {
+    const newPicture: Express.Multer.File = {
+      fieldname: 'picture',
+      originalname: 'profile-picture.jpg',
+      encoding: '7bit',
+      mimetype: 'image/jpeg',
+      size: 1024,
+      buffer: Buffer.from('file-content'),
+      stream: new Readable(),
+      destination: '',
+      filename: '',
+      path: 'new-profile-picture-path',
+    };
+
+    const updatedUser = {
+      ...user,
+      profilePicture: newPicture.path,
+    };
+
+    it('should not delete the old file if there is no saved profile picture', async () => {
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockResolvedValueOnce(mockUserDto);
+
+      jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
+      jest.spyOn(fs, 'unlinkSync').mockImplementationOnce(() => null);
+
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValueOnce(updatedUser);
+
+      const result = await userService.updateProfilePicture(0, newPicture);
+
+      expect(userService.getCurrentUser).toHaveBeenCalledWith(0);
+      expect(fs.existsSync).not.toBeCalled();
+      expect(fs.unlinkSync).not.toHaveBeenCalled();
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 0 },
+        data: { profilePicture: newPicture.path },
+      });
+
+      expect(result).toEqual(UserDto.fromUser(updatedUser));
+    });
+
+    it('should delete the old file if there is already a saved profile picture', async () => {
+      const userWithProfilePicture: UserDto = {
+        ...mockUserDto,
+        profilePicture: 'old-profile-picture-path',
+      };
+
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockResolvedValueOnce(userWithProfilePicture);
+
+      jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+      jest.spyOn(fs, 'unlinkSync').mockImplementationOnce(() => null);
+
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValueOnce(updatedUser);
+
+      const result = await userService.updateProfilePicture(0, newPicture);
+
+      expect(userService.getCurrentUser).toHaveBeenCalledWith(0);
+      expect(fs.existsSync).toHaveBeenCalledWith(
+        userWithProfilePicture.profilePicture,
+      );
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        userWithProfilePicture.profilePicture,
+      );
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 0 },
+        data: { profilePicture: newPicture.path },
+      });
+      expect(result).toEqual(UserDto.fromUser(updatedUser));
     });
   });
 });
