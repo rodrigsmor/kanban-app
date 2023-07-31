@@ -28,6 +28,7 @@ model Board {
   name              String
   columns           Column[]
   background        String?
+  description       String?
   isPinned          Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
