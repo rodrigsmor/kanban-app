@@ -16,8 +16,42 @@ model User {
   lastName          String
   profilePicture    String?
   email             String    @unique
+  boards            Board[]
   password          String
   isAdmin           Boolean   @default(false)
+}
+
+model Board {
+  id                Int       @id @default(autoincrement())
+  ownerId           Int
+  owner             User @relation(fields: [ownerId], references: [id])
+  name              String
+  columns           Column[]
+  background        String?
+  isPinned          Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updateAt          DateTime  @updatedAt
+}
+
+model Column {
+  id                Int @id @default(autoincrement())
+  title             String
+  boardId           Int
+  board             Board @relation(fields: [boardId], references: [id])
+  cover             String?
+  cards             Card[]
+  createdAt         DateTime  @default(now())
+  updateAt          DateTime  @updatedAt
+}
+
+model Card {
+  id                Int       @id @default(autoincrement())
+  title             String
+  description       String
+  columnId          Int
+  column            Column    @relation(fields: [columnId], references: [id])
+  createdAt         DateTime  @default(now())
+  updateAt          DateTime  @updatedAt
 }
 
 model RefreshToken {
