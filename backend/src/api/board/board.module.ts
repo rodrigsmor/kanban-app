@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthMiddleware } from '../../utils/middlewares/auth.middleware';
 import { MulterConfigService } from '../../utils/config/multer-config-service';
+import { UserService } from '../user/user.service';
 
 @Module({
   imports: [
@@ -16,7 +17,13 @@ import { MulterConfigService } from '../../utils/config/multer-config-service';
     }),
   ],
   controllers: [BoardController],
-  providers: [BoardService, AuthService, JwtService, PrismaService],
+  providers: [
+    BoardService,
+    UserService,
+    AuthService,
+    JwtService,
+    PrismaService,
+  ],
 })
 export class BoardModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
