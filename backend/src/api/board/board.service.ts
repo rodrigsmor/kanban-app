@@ -1,8 +1,14 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { UserService } from '../user/user.service';
+import { BoardCreateDto, BoardSummaryDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Column } from '@prisma/client';
+import { BoardWithColumns } from '../../utils/@types/board.types';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 @Injectable()
 export class BoardService {
@@ -29,6 +35,29 @@ export class BoardService {
     });
 
     return summaryBoard;
+  }
+
+  async getBoard(userId: number, boardId: number): Promise<BoardWithColumns> {
+    const board = await this.prisma.board.findUnique({
+      where: {
+        id: boardId,
+      },
+      include: {
+        columns: {
+          include: { cards: true },
+        },
+        owner: true,
+      },
+    });
+
+    if (!board)
+      throw new NotFoundException('The board provided does not seem to exist');
+    else if (board.ownerId !== userId) {
+      throw new ForbiddenException('You are not allowed to access this board');
+    }
+
+    delete board.owner.password;
+    return board;
   }
 
   async createNewBoard(

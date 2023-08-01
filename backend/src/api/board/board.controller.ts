@@ -1,6 +1,7 @@
-import { BoardCreateDto, BoardSummaryDto } from './dto';
 import { BoardService } from './board.service';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { BoardCreateDto, BoardSummaryDto } from './dto';
+import { BoardWithColumns } from '../../utils/@types/board.types';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
 
 @Controller('/api/board')
@@ -10,6 +11,14 @@ export class BoardController {
   @Get('/')
   async getUserBoards(@UserId() userId: number): Promise<BoardSummaryDto[]> {
     return this.boardService.getUserBoards(userId);
+  }
+
+  @Get('/:id')
+  async getBoard(
+    @UserId() userId: number,
+    @Param('id') boardId: number,
+  ): Promise<BoardWithColumns> {
+    return this.boardService.getBoard(userId, boardId);
   }
 
   @Post('/')
