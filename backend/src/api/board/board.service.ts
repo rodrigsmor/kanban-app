@@ -3,7 +3,6 @@ import { BoardCreateDto, BoardSummaryDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardWithColumns } from '../../utils/@types/board.types';
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
