@@ -1,10 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
 import { EditUserDto, UserDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import * as fs from 'fs';
 

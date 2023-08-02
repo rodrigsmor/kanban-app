@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { UserModule } from './api/user/user.module';
+import { BoardModule } from './api/board/board.module';
 import { PrismaService } from './prisma/prisma.service';
 
 @Module({
-  imports: [AuthModule, JwtModule.register({}), UserModule],
+  imports: [AuthModule, JwtModule.register({}), UserModule, BoardModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

@@ -1,5 +1,11 @@
 import { User } from '@prisma/client';
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class UserDto {
   @IsNumber()
@@ -19,6 +25,7 @@ export class UserDto {
   lastName: string;
 
   @IsString()
+  @IsOptional()
   profilePicture: string;
 
   constructor(partial: Partial<UserDto>) {
