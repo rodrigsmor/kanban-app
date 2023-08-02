@@ -8,11 +8,14 @@ import {
   BoardWithColumns,
   ColumnsWithCards,
 } from '../utils/@types/board.types';
-import { ForbiddenException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 
 describe('BoardService', () => {
-  let userService: UserService;
   let boardService: BoardService;
   let prismaService: PrismaService;
 
@@ -58,7 +61,6 @@ describe('BoardService', () => {
       providers: [BoardService, UserService, PrismaService],
     }).compile();
 
-    userService = moduleRef.get<UserService>(UserService);
     boardService = moduleRef.get<BoardService>(BoardService);
     prismaService = moduleRef.get<PrismaService>(PrismaService);
   });
