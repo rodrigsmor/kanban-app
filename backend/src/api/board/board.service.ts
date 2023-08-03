@@ -1,13 +1,15 @@
-import { UserService } from '../user/user.service';
-import { BoardCreateDto, BoardSummaryDto } from './dto';
-import { PrismaService } from '../../prisma/prisma.service';
-import { BoardWithColumns } from '../../utils/@types/board.types';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { User } from '@prisma/client';
+import { UserService } from '../user/user.service';
+import { BoardCreateDto, BoardSummaryDto } from './dto';
+import { PrismaService } from '../../prisma/prisma.service';
+import { BoardWithColumns } from '../../utils/@types/board.types';
 
 @Injectable()
 export class BoardService {
@@ -30,7 +32,7 @@ export class BoardService {
     if (!boards) return [];
 
     const summaryBoard: BoardSummaryDto[] = boards.map((board) => {
-      return new BoardSummaryDto(board);
+      return new BoardSummaryDto(board as unknown as BoardWithColumns);
     });
 
     return summaryBoard;
@@ -46,6 +48,7 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
+        members: true,
       },
     });
 
@@ -55,8 +58,7 @@ export class BoardService {
       throw new ForbiddenException('You are not allowed to access this board');
     }
 
-    delete board.owner.password;
-    return board;
+    return board as unknown as BoardWithColumns;
   }
 
   async createNewBoard(
@@ -64,16 +66,16 @@ export class BoardService {
     newBoard: BoardCreateDto,
   ): Promise<BoardSummaryDto> {
     try {
-      const boardCreated = await this.prisma.board.create({
+      const board = await this.prisma.board.create({
         data: {
           name: newBoard.name,
           description: newBoard.description,
           ownerId: userId,
           columns: {
             create: [
-              { title: '⏳ pending' },
-              { title: '🚧 in progress' },
-              { title: '✅ done' },
+              { title: '⏳ pending', index: 0 },
+              { title: '🚧 in progress', index: 1 },
+              { title: '✅ done', index: 1 },
             ],
           },
         },
@@ -82,8 +84,11 @@ export class BoardService {
             include: { cards: true },
           },
           owner: true,
+          members: true,
         },
       });
+
+      const boardCreated = await this.addMemberToBoard(userId, board.id);
 
       return new BoardSummaryDto(boardCreated);
     } catch (error) {
@@ -91,5 +96,41 @@ export class BoardService {
         error.message || 'It was not possible to create a new board',
       );
     }
+  }
+
+  async addMemberToBoard(
+    memberId: number,
+    boardId: number,
+  ): Promise<BoardWithColumns> {
+    const member = await this.prisma.user.findUnique({
+      where: { id: memberId },
+    });
+
+    if (!member)
+      throw new NotFoundException('the provided member does not seem to exist');
+
+    const board = await this.prisma.board.findUnique({
+      where: { id: boardId },
+    });
+
+    if (!board)
+      throw new BadRequestException(
+        'the provided board does not seem to exist',
+      );
+
+    await this.prisma.boardMembership.create({
+      data: { boardId, userId: memberId },
+    });
+
+    const updatedBoard = await this.prisma.board.findUnique({
+      where: { id: boardId },
+      include: {
+        columns: { include: { cards: true } },
+        owner: true,
+        members: true,
+      },
+    });
+
+    return updatedBoard as unknown as BoardWithColumns;
   }
 }
