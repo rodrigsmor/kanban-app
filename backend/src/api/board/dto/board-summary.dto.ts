@@ -10,8 +10,8 @@ export class BoardSummaryDto {
   createdAt: Date;
   isPinned: boolean;
   description: string;
-  amountOfCards: number;
-  membersAmount: number;
+  totalCards: number;
+  numberOfMembers: number;
 
   constructor(board: BoardWithColumns) {
     this.id = board.id;
@@ -20,8 +20,8 @@ export class BoardSummaryDto {
     this.updateAt = board.updateAt;
     this.createdAt = board.createdAt;
     this.description = board.description;
-    this.owner = new UserDto(board.owner);
-    this.membersAmount = board.members.length;
-    this.amountOfCards = getAmountOfCards(board.columns);
+    this.owner = UserDto.fromUser(board.owner);
+    this.numberOfMembers = board.members.length;
+    this.totalCards = getAmountOfCards(board.columns);
   }
 }
