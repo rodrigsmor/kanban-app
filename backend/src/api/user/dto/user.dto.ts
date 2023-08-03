@@ -28,7 +28,7 @@ export class UserDto {
   @IsOptional()
   profilePicture: string;
 
-  constructor(partial: Partial<UserDto>) {
+  constructor(partial: Partial<User>) {
     Object.assign(this, partial);
   }
 

@@ -15,13 +15,13 @@ export class BoardSummaryDto {
 
   constructor(board: BoardWithColumns) {
     this.id = board.id;
-    this.amountOfCards = getAmountOfCards(board.columns);
     this.name = board.name;
-    this.membersAmount = 1;
     this.isPinned = board.isPinned;
     this.updateAt = board.updateAt;
     this.createdAt = board.createdAt;
     this.description = board.description;
-    this.owner = UserDto.fromUser(board.owner);
+    this.owner = new UserDto(board.owner);
+    this.membersAmount = board.members.length;
+    this.amountOfCards = getAmountOfCards(board.columns);
   }
 }
