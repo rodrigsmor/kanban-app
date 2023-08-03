@@ -7,4 +7,5 @@ export interface ColumnsWithCards extends Column {
 export interface BoardWithColumns extends Board {
   columns: ColumnsWithCards[];
   owner: User;
+  members: User[];
 }

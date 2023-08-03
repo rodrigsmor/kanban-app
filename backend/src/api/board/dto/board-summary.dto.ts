@@ -1,6 +1,7 @@
 import { UserDto } from '../../user/dto/user.dto';
 import { BoardWithColumns } from '../../../utils/@types/board.types';
 import { getAmountOfCards } from '../../../utils/functions/get-amount-of-cards';
+import { BoardPrismaType } from '../../../utils/@types/payloads.type';
 
 export class BoardSummaryDto {
   id: number;
@@ -10,18 +11,18 @@ export class BoardSummaryDto {
   createdAt: Date;
   isPinned: boolean;
   description: string;
-  amountOfCards: number;
-  membersAmount: number;
+  totalCards: number;
+  numberOfMembers: number;
 
-  constructor(board: BoardWithColumns) {
+  constructor(board: BoardWithColumns | BoardPrismaType) {
     this.id = board.id;
-    this.amountOfCards = getAmountOfCards(board.columns);
     this.name = board.name;
-    this.membersAmount = 1;
     this.isPinned = board.isPinned;
     this.updateAt = board.updateAt;
     this.createdAt = board.createdAt;
     this.description = board.description;
     this.owner = UserDto.fromUser(board.owner);
+    this.numberOfMembers = board.members.length;
+    this.totalCards = getAmountOfCards(board.columns);
   }
 }
