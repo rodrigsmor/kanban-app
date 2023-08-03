@@ -1,5 +1,5 @@
 import { Card } from '@prisma/client';
-import { ColumnPrismaType } from './payloads.type';
+import { ColumnPrismaType } from './';
 
 export class ColumnType {
   id: number;
