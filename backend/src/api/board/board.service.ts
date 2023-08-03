@@ -5,11 +5,11 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { UserService } from '../user/user.service';
-import { BoardCreateDto, BoardSummaryDto } from './dto';
+import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardWithColumns } from '../../utils/@types/board.types';
+import { BoardPrismaType } from '../../utils/@types/payloads.type';
 
 @Injectable()
 export class BoardService {
@@ -26,6 +26,7 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
+        members: true,
       },
     });
 
@@ -38,7 +39,7 @@ export class BoardService {
     return summaryBoard;
   }
 
-  async getBoard(userId: number, boardId: number): Promise<BoardWithColumns> {
+  async getBoard(userId: number, boardId: number): Promise<BoardDto> {
     const board = await this.prisma.board.findUnique({
       where: {
         id: boardId,
@@ -48,7 +49,7 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
-        members: true,
+        members: { select: { user: true } },
       },
     });
 
@@ -58,7 +59,7 @@ export class BoardService {
       throw new ForbiddenException('You are not allowed to access this board');
     }
 
-    return board as unknown as BoardWithColumns;
+    return new BoardDto(board);
   }
 
   async createNewBoard(
@@ -101,7 +102,7 @@ export class BoardService {
   async addMemberToBoard(
     memberId: number,
     boardId: number,
-  ): Promise<BoardWithColumns> {
+  ): Promise<BoardPrismaType> {
     const member = await this.prisma.user.findUnique({
       where: { id: memberId },
     });
@@ -125,12 +126,14 @@ export class BoardService {
     const updatedBoard = await this.prisma.board.findUnique({
       where: { id: boardId },
       include: {
-        columns: { include: { cards: true } },
+        columns: {
+          include: { cards: true },
+        },
         owner: true,
-        members: true,
+        members: { select: { user: true } },
       },
     });
 
-    return updatedBoard as unknown as BoardWithColumns;
+    return updatedBoard;
   }
 }
