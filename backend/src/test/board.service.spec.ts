@@ -190,68 +190,91 @@ describe('BoardService', () => {
     });
   });
 
-  // describe('createNewBoard', () => {
-  //   const mockColumnsCreated: Array<ColumnsWithCards> = [
-  //     { ...mockColumns, title: '⏳ pending' },
-  //     { ...mockColumns, title: '🚧 in progress' },
-  //     { ...mockColumns, title: '✅ done' },
-  //   ];
+  describe('createNewBoard', () => {
+    const mockColumnsCreated: Array<ColumnsWithCards> = [
+      { ...mockColumns, title: '⏳ pending' },
+      { ...mockColumns, title: '🚧 in progress' },
+      { ...mockColumns, title: '✅ done' },
+    ];
 
-  //   const mockBoardCreated: BoardWithColumns = {
-  //     ...mockBoards,
-  //     columns: mockColumnsCreated,
-  //   };
+    const mockBoardCreated: BoardPrismaType = {
+      ...mockBoards,
+      columns: mockColumnsCreated,
+      members: [],
+    };
 
-  //   const mockNewBoard: BoardCreateDto = {
-  //     name: mockBoardCreated.name,
-  //     description: mockBoardCreated.description,
-  //   };
+    const mockNewBoard: BoardCreateDto = {
+      name: mockBoardCreated.name,
+      description: mockBoardCreated.description,
+    };
 
-  //   const mockBoardSummaryDTO: BoardSummaryDto = new BoardSummaryDto(
-  //     mockBoardCreated,
-  //   );
+    const mockBoardCreatedResponse: BoardPrismaType = {
+      ...mockBoardCreated,
+      members: [
+        {
+          user: {
+            email: 'test@user.com',
+            firstName: 'Test first name',
+            id: 203,
+            isAdmin: true,
+            lastName: 'Test last name',
+            password: 'hyper-secure-password',
+            profilePicture: '/path-to-image',
+          },
+        },
+      ],
+    };
 
-  //   it('should create a new board and return a DTO summary of it', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'create')
-  //       .mockResolvedValueOnce(mockBoardCreated);
+    const mockBoardSummaryDTO: BoardSummaryDto = new BoardSummaryDto(
+      mockBoardCreatedResponse,
+    );
 
-  //     const result = await boardService.createNewBoard(203, mockNewBoard);
+    it('should create a new board and return a DTO summary of it', async () => {
+      jest
+        .spyOn(prismaService.board, 'create')
+        .mockResolvedValueOnce(mockBoardCreated);
 
-  //     expect(result).toStrictEqual(mockBoardSummaryDTO);
-  //     expect(prismaService.board.create).toBeCalledWith({
-  //       data: {
-  //         name: mockNewBoard.name,
-  //         description: mockNewBoard.description,
-  //         ownerId: 203,
-  //         columns: {
-  //           create: [
-  //             { title: '⏳ pending' },
-  //             { title: '🚧 in progress' },
-  //             { title: '✅ done' },
-  //           ],
-  //         },
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //       },
-  //     });
-  //   });
+      jest
+        .spyOn(boardService, 'addMemberToBoard')
+        .mockResolvedValueOnce(mockBoardCreatedResponse);
 
-  //   it('should throw a InternalServerErrorException when board creation fails', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'create')
-  //       .mockRejectedValueOnce(new Error(''));
+      const result = await boardService.createNewBoard(203, mockNewBoard);
 
-  //     try {
-  //       await boardService.createNewBoard(203, mockNewBoard);
-  //     } catch (error) {
-  //       expect(error).toBeInstanceOf(InternalServerErrorException);
-  //       expect(error.message).toBe('It was not possible to create a new board');
-  //     }
-  //   });
-  // });
+      expect(result).toStrictEqual(mockBoardSummaryDTO);
+      expect(prismaService.board.create).toBeCalledWith({
+        data: {
+          name: mockNewBoard.name,
+          description: mockNewBoard.description,
+          ownerId: 203,
+          columns: {
+            create: [
+              { title: '⏳ pending', index: 0 },
+              { title: '🚧 in progress', index: 1 },
+              { title: '✅ done', index: 2 },
+            ],
+          },
+        },
+        include: {
+          columns: {
+            include: { cards: true },
+          },
+          owner: true,
+          members: true,
+        },
+      });
+    });
+
+    it('should throw a InternalServerErrorException when board creation fails', async () => {
+      jest
+        .spyOn(prismaService.board, 'create')
+        .mockRejectedValueOnce(new Error(''));
+
+      try {
+        await boardService.createNewBoard(203, mockNewBoard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toBe('It was not possible to create a new board');
+      }
+    });
+  });
 });
