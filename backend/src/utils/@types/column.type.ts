@@ -12,7 +12,7 @@ export class ColumnType {
 
   constructor(column: ColumnPrismaType) {
     this.id = column.id;
-    this.index = column.index;
+    this.index = column.columnIndex;
     this.title = column.title;
     this.cover = column.cover;
     this.createdAt = column.createdAt;
