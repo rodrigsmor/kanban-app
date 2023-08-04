@@ -39,6 +39,7 @@ model Board {
 
 model BoardMembership {
   id        Int     @id @default(autoincrement())
+  role      String  @default("MEMBER")
   boardId   Int
   board     Board   @relation(fields: [boardId], references: [id])
   userId    Int
@@ -47,7 +48,7 @@ model BoardMembership {
 
 model Column {
   id                Int @id @default(autoincrement())
-  index             Int
+  columnIndex       Int
   title             String
   boardId           Int
   board             Board @relation(fields: [boardId], references: [id])
