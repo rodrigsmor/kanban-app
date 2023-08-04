@@ -75,7 +75,7 @@ export class BoardService {
             create: [
               { title: '⏳ pending', index: 0 },
               { title: '🚧 in progress', index: 1 },
-              { title: '✅ done', index: 1 },
+              { title: '✅ done', index: 2 },
             ],
           },
         },
