@@ -1,6 +1,7 @@
 import { UserDto } from '../../user/dto/user.dto';
 import { ColumnType } from '../../../utils/@types/column.type';
 import { BoardPrismaType } from '../../../utils/@types/payloads.type';
+import { BoardRolesEnum } from 'src/utils/enums';
 
 export class BoardDto {
   id: number;
@@ -24,6 +25,8 @@ export class BoardDto {
     this.updateAt = board.updateAt;
     this.columns = board.columns.map((column) => new ColumnType(column));
     this.owner = UserDto.fromUser(board.owner);
-    this.members = board.members.map(({ user }) => UserDto.fromUser(user));
+    this.members = board.members.map(({ user, role }) =>
+      UserDto.fromUser(user, role as BoardRolesEnum),
+    );
   }
 }

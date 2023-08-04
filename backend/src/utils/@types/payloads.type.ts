@@ -6,7 +6,7 @@ export type BoardPrismaType = Prisma.BoardGetPayload<{
       include: { cards: true };
     };
     owner: true;
-    members: { select: { user: true } };
+    members: { select: { user: true; role: true } };
   };
 }>;
 
