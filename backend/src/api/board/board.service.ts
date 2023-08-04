@@ -73,9 +73,9 @@ export class BoardService {
           ownerId: userId,
           columns: {
             create: [
-              { title: '⏳ pending', index: 0 },
-              { title: '🚧 in progress', index: 1 },
-              { title: '✅ done', index: 2 },
+              { title: '⏳ pending', columnIndex: 0 },
+              { title: '🚧 in progress', columnIndex: 1 },
+              { title: '✅ done', columnIndex: 2 },
             ],
           },
         },

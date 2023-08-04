@@ -4,10 +4,7 @@ import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BoardService } from '../api/board/board.service';
 import { BoardSummaryDto } from '../api/board/dto/board-summary.dto';
-import {
-  BoardWithColumns,
-  ColumnsWithCards,
-} from '../utils/@types/board.types';
+import { ColumnsWithCards } from '../utils/@types/board.types';
 import {
   BadRequestException,
   ForbiddenException,
@@ -40,7 +37,7 @@ describe('BoardService', () => {
     id: 0,
     title: 'New column',
     updateAt: new Date(2024, 5, 1),
-    index: 0,
+    columnIndex: 0,
   };
 
   const mockBoards: BoardPrismaType = {
@@ -249,9 +246,9 @@ describe('BoardService', () => {
           ownerId: 203,
           columns: {
             create: [
-              { title: '⏳ pending', index: 0 },
-              { title: '🚧 in progress', index: 1 },
-              { title: '✅ done', index: 2 },
+              { title: '⏳ pending', columnIndex: 0 },
+              { title: '🚧 in progress', columnIndex: 1 },
+              { title: '✅ done', columnIndex: 2 },
             ],
           },
         },
