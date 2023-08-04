@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 import { BoardPrismaType, ColumnPrismaType } from '../utils/@types';
+import { BoardDto } from '../api/board/dto/board.dto';
 
 describe('BoardService', () => {
   let boardService: BoardService;
@@ -54,6 +55,8 @@ describe('BoardService', () => {
     description: 'a little mock description',
     members: [],
   };
+
+  const mockBoardDto: BoardDto = new BoardDto(mockBoards);
 
   const mockSummaryDto: BoardSummaryDto = new BoardSummaryDto(mockBoards);
 
@@ -106,83 +109,86 @@ describe('BoardService', () => {
     });
   });
 
-  // describe('getBoard', () => {
-  //   const mockUserId = 203;
-  //   const mockBoardId = 152;
+  describe('getBoard', () => {
+    const mockUserId = 203;
+    const mockBoardId = 152;
 
-  //   it('should throw NotFoundException in case the board Id does not match any board', async () => {
-  //     jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+    it('should throw NotFoundException in case the board Id does not match any board', async () => {
+      jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
 
-  //     expect(
-  //       boardService.getBoard(mockUserId, mockBoardId),
-  //     ).rejects.toThrowError(NotFoundException);
-  //     expect(prismaService.board.findUnique).toBeCalledWith({
-  //       where: {
-  //         id: mockBoardId,
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //       },
-  //     });
-  //   });
+      expect(
+        boardService.getBoard(mockUserId, mockBoardId),
+      ).rejects.toThrowError(NotFoundException);
+      expect(prismaService.board.findUnique).toBeCalledWith({
+        where: {
+          id: mockBoardId,
+        },
+        include: {
+          columns: {
+            include: { cards: true },
+          },
+          owner: true,
+          members: { select: { user: true } },
+        },
+      });
+    });
 
-  //   it('should throw ForbiddenException if the user does not participate in the board', async () => {
-  //     const mockWrongBoard: BoardWithColumns = {
-  //       ...mockBoards,
-  //       ownerId: 67,
-  //       owner: {
-  //         ...mockOwner,
-  //         id: 67,
-  //       },
-  //     };
+    it('should throw ForbiddenException if the user does not participate in the board', async () => {
+      const mockWrongBoard: BoardPrismaType = {
+        ...mockBoards,
+        ownerId: 67,
+        owner: {
+          ...mockOwner,
+          id: 67,
+        },
+      };
 
-  //     jest
-  //       .spyOn(prismaService.board, 'findUnique')
-  //       .mockResolvedValueOnce(mockWrongBoard);
+      jest
+        .spyOn(prismaService.board, 'findUnique')
+        .mockResolvedValueOnce(mockWrongBoard);
 
-  //     expect(
-  //       boardService.getBoard(mockUserId, mockBoardId),
-  //     ).rejects.toThrowError(ForbiddenException);
-  //     expect(prismaService.board.findUnique).toBeCalledWith({
-  //       where: {
-  //         id: mockBoardId,
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //       },
-  //     });
-  //   });
+      expect(
+        boardService.getBoard(mockUserId, mockBoardId),
+      ).rejects.toThrowError(ForbiddenException);
+      expect(prismaService.board.findUnique).toBeCalledWith({
+        where: {
+          id: mockBoardId,
+        },
+        include: {
+          columns: {
+            include: { cards: true },
+          },
+          owner: true,
+          members: { select: { user: true } },
+        },
+      });
+    });
 
-  //   it('should return the board information', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'findUnique')
-  //       .mockResolvedValueOnce(mockBoards);
+    it('should return the board information', async () => {
+      jest
+        .spyOn(prismaService.board, 'findUnique')
+        .mockResolvedValueOnce(mockBoards);
 
-  //     const result = await boardService.getBoard(mockUserId, mockBoardId);
+      const result = await boardService.getBoard(mockUserId, mockBoardId);
 
-  //     const mockBoardsWithNoOwnerPassword = mockBoards;
-  //     delete mockBoardsWithNoOwnerPassword.owner.password;
+      const mockBoardsWithNoOwnerPassword = mockBoards;
+      delete mockBoardsWithNoOwnerPassword.owner.password;
 
-  //     expect(result).toStrictEqual(mockBoardsWithNoOwnerPassword);
-  //     expect(prismaService.board.findUnique).toBeCalledWith({
-  //       where: {
-  //         id: mockBoardId,
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //       },
-  //     });
-  //   });
-  // });
+      expect(result).toStrictEqual(mockBoardDto);
+      expect(prismaService.board.findUnique).toBeCalledWith({
+        where: {
+          id: mockBoardId,
+        },
+        include: {
+          columns: {
+            include: { cards: true },
+          },
+          owner: true,
+          members: { select: { user: true } },
+        },
+      });
+    });
+  });
 
   // describe('createNewBoard', () => {
   //   const mockColumnsCreated: Array<ColumnsWithCards> = [
