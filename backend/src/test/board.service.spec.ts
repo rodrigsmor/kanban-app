@@ -9,6 +9,7 @@ import {
   ColumnsWithCards,
 } from '../utils/@types/board.types';
 import {
+  BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
@@ -274,6 +275,28 @@ describe('BoardService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(InternalServerErrorException);
         expect(error.message).toBe('It was not possible to create a new board');
+      }
+    });
+  });
+
+  describe('addMemberToBoard', () => {
+    it('should throw a NotFoundException when the user is not found', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
+      jest
+        .spyOn(prismaService.boardMembership, 'create')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+
+      try {
+        await boardService.addMemberToBoard(203, 152);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'the provided member does not seem to exist',
+        );
+        expect(prismaService.boardMembership.create).not.toBeCalled();
+        expect(prismaService.board.findUnique).not.toBeCalled();
+        expect(error).not.toBeInstanceOf(BadRequestException);
       }
     });
   });
