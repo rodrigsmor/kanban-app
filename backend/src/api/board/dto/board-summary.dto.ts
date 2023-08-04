@@ -1,7 +1,6 @@
 import { UserDto } from '../../user/dto/user.dto';
-import { BoardWithColumns } from '../../../utils/@types/board.types';
+import { BoardPrismaType, BoardWithColumns } from '../../../utils/@types';
 import { getAmountOfCards } from '../../../utils/functions/get-amount-of-cards';
-import { BoardPrismaType } from '../../../utils/@types/payloads.type';
 
 export class BoardSummaryDto {
   id: number;

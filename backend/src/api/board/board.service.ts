@@ -6,10 +6,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
-import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
+import { BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BoardWithColumns } from '../../utils/@types/board.types';
-import { BoardPrismaType } from '../../utils/@types/payloads.type';
+import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 
 @Injectable()
 export class BoardService {
@@ -26,14 +25,14 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
-        members: true,
+        members: { select: { user: true } },
       },
     });
 
     if (!boards) return [];
 
     const summaryBoard: BoardSummaryDto[] = boards.map((board) => {
-      return new BoardSummaryDto(board as unknown as BoardWithColumns);
+      return new BoardSummaryDto(board);
     });
 
     return summaryBoard;
@@ -76,7 +75,7 @@ export class BoardService {
             create: [
               { title: '⏳ pending', index: 0 },
               { title: '🚧 in progress', index: 1 },
-              { title: '✅ done', index: 1 },
+              { title: '✅ done', index: 2 },
             ],
           },
         },
