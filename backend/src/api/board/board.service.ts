@@ -9,6 +9,7 @@ import { UserService } from '../user/user.service';
 import { BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
+import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 
 @Injectable()
 export class BoardService {
@@ -25,7 +26,7 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
-        members: { select: { user: true } },
+        members: { select: { user: true, role: true } },
       },
     });
 
@@ -48,7 +49,7 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
-        members: { select: { user: true } },
+        members: { select: { user: true, role: true } },
       },
     });
 
@@ -88,7 +89,11 @@ export class BoardService {
         },
       });
 
-      const boardCreated = await this.addMemberToBoard(userId, board.id);
+      const boardCreated = await this.addMemberToBoard(
+        userId,
+        board.id,
+        BoardRolesEnum.ADMIN,
+      );
 
       return new BoardSummaryDto(boardCreated);
     } catch (error) {
@@ -101,6 +106,7 @@ export class BoardService {
   async addMemberToBoard(
     memberId: number,
     boardId: number,
+    memberRole: BoardRolesEnum,
   ): Promise<BoardPrismaType> {
     const member = await this.prisma.user.findUnique({
       where: { id: memberId },
@@ -119,7 +125,7 @@ export class BoardService {
       );
 
     await this.prisma.boardMembership.create({
-      data: { boardId, userId: memberId },
+      data: { boardId, userId: memberId, role: memberRole },
     });
 
     const updatedBoard = await this.prisma.board.findUnique({
@@ -129,7 +135,7 @@ export class BoardService {
           include: { cards: true },
         },
         owner: true,
-        members: { select: { user: true } },
+        members: { select: { user: true, role: true } },
       },
     });
 
