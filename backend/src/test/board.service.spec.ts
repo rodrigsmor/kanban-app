@@ -14,6 +14,7 @@ import {
 import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 import { BoardPrismaType, ColumnPrismaType } from '../utils/@types';
 import { BoardDto } from '../api/board/dto/board.dto';
+import { BoardRolesEnum } from '../utils/enums';
 
 describe('BoardService', () => {
   let boardService: BoardService;
@@ -81,7 +82,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -101,7 +102,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -126,7 +127,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -157,7 +158,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -182,7 +183,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -219,6 +220,7 @@ describe('BoardService', () => {
             password: 'hyper-secure-password',
             profilePicture: '/path-to-image',
           },
+          role: 'ADMIN',
         },
       ],
     };
@@ -282,6 +284,7 @@ describe('BoardService', () => {
       members: [
         {
           user: mockOwner,
+          role: 'OBSERVER',
         },
       ],
     };
@@ -294,7 +297,7 @@ describe('BoardService', () => {
       jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
 
       try {
-        await boardService.addMemberToBoard(203, 152);
+        await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
       } catch (error) {
         expect(prismaService.user.findUnique).toBeCalledWith({
           where: { id: 203 },
@@ -319,7 +322,7 @@ describe('BoardService', () => {
       jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
 
       try {
-        await boardService.addMemberToBoard(203, 152);
+        await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
       } catch (error) {
         expect(prismaService.user.findUnique).toBeCalledWith({
           where: { id: 203 },
@@ -350,7 +353,11 @@ describe('BoardService', () => {
         .spyOn(prismaService.board, 'findUnique')
         .mockResolvedValueOnce(mockBoardsWithMembers);
 
-      const result = await boardService.addMemberToBoard(203, 152);
+      const result = await boardService.addMemberToBoard(
+        203,
+        152,
+        BoardRolesEnum.OBSERVER,
+      );
 
       expect(result).toBe(mockBoardsWithMembers);
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
@@ -360,7 +367,7 @@ describe('BoardService', () => {
         where: { id: 152 },
       });
       expect(prismaService.boardMembership.create).toBeCalledWith({
-        data: { boardId: 152, userId: 203 },
+        data: { boardId: 152, userId: 203, role: BoardRolesEnum.OBSERVER },
       });
       expect(prismaService.board.findUnique).toHaveBeenLastCalledWith({
         where: { id: 152 },
@@ -369,7 +376,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
