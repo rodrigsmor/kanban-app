@@ -32,6 +32,7 @@ model Board {
   background        String?
   description       String?
   members           BoardMembership[]
+  memberInvites     BoardInvite[]
   isPinned          Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
@@ -75,6 +76,16 @@ model CardAssignees {
   card      Card    @relation(fields: [cardId], references: [id])
   userId    Int
   user      User    @relation(fields: [userId], references: [id])     
+}
+
+model BoardInvite {
+  id            Int @id @default(autoincrement())
+  boardId       Int
+  board         Board @relation(fields: [boardId], references: [id])
+  email         String
+  isPending     Boolean @default(true)
+  expireAt      DateTime
+  createdAt     DateTime @default(now())
 }
 
 model RefreshToken {
