@@ -19,7 +19,7 @@ export class BoardService {
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly boardRepository: BoardRepository,
-  ) {}
+  ) { }
 
   async getUserBoards(
     userId: number,
@@ -130,7 +130,7 @@ export class BoardService {
     memberId: number,
     role: BoardRolesEnum,
   ): Promise<UserDto> {
-    const isAdmin = await this.boardRepository.isBoardMemberAnAdmin(
+    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
       userId,
       boardId,
     );
