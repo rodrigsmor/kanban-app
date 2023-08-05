@@ -30,3 +30,17 @@ export type BoardMembershipType = Prisma.BoardMembershipGetPayload<{
     user: true;
   };
 }>;
+
+export type InvitePrismaType = Prisma.BoardInviteGetPayload<{
+  include: {
+    board: {
+      include: {
+        columns: {
+          include: { cards: true };
+        };
+        owner: true;
+        members: { select: { user: true; role: true } };
+      };
+    };
+  };
+}>;
