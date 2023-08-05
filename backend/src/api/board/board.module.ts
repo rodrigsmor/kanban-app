@@ -8,6 +8,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthMiddleware } from '../../utils/middlewares/auth.middleware';
 import { MulterConfigService } from '../../utils/config/multer-config-service';
 import { UserService } from '../user/user.service';
+import { BoardRepository } from '../../common/repositories';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UserService } from '../user/user.service';
     AuthService,
     JwtService,
     PrismaService,
+    BoardRepository,
   ],
 })
 export class BoardModule implements NestModule {
