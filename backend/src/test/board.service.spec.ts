@@ -68,11 +68,11 @@ describe('BoardService', () => {
     prismaService = moduleRef.get<PrismaService>(PrismaService);
   });
 
-  describe('getUserBoards', () => {
+  describe('getOwnedBoards', () => {
     it('should return an empty array when the user has no boards', async () => {
       jest.spyOn(prismaService.board, 'findMany').mockResolvedValueOnce(null);
 
-      const result = await boardService.getUserBoards(203);
+      const result = await boardService.getOwnedBoards(203);
 
       expect(result).toStrictEqual([]);
       expect(prismaService.board.findMany).toBeCalledWith({
@@ -92,7 +92,7 @@ describe('BoardService', () => {
         .spyOn(prismaService.board, 'findMany')
         .mockResolvedValueOnce([mockBoards]);
 
-      const result = await boardService.getUserBoards(203);
+      const result = await boardService.getOwnedBoards(203);
 
       expect(result).toStrictEqual([mockSummaryDto]);
       expect(prismaService.board.findMany).toBeCalledWith({

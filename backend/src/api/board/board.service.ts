@@ -10,6 +10,7 @@ import { BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
+import { UserDto } from '../user/dto';
 
 @Injectable()
 export class BoardService {
@@ -18,7 +19,10 @@ export class BoardService {
     private readonly userService: UserService,
   ) {}
 
-  async getUserBoards(userId: number, quantity?: number): Promise<any> {
+  async getUserBoards(
+    userId: number,
+    quantity?: number,
+  ): Promise<BoardSummaryDto[]> {
     const participatingBoards = await this.prisma.boardMembership.findMany({
       where: { userId },
       include: {
@@ -168,5 +172,51 @@ export class BoardService {
     });
 
     return updatedBoard;
+  }
+
+  async updateMemberRole(
+    userId: number,
+    boardId: number,
+    memberId: number,
+    role: BoardRolesEnum,
+  ): Promise<UserDto> {
+    const isAdmin = await this.isBoardMemberAnAdmin(userId, boardId);
+
+    if (!isAdmin)
+      throw new ForbiddenException('You cannot perform this change');
+
+    if (!(role in BoardRolesEnum))
+      throw new BadRequestException('the role provided is not a valid role');
+
+    const board = await this.prisma.boardMembership.findFirst({
+      where: { boardId, userId: memberId },
+    });
+
+    if (!board)
+      throw new BadRequestException(
+        'the member provided is not a participant in this board',
+      );
+
+    const updatedBoard = await this.prisma.boardMembership.update({
+      where: { id: board.id },
+      data: { role },
+      include: { user: true },
+    });
+
+    return UserDto.fromUser(
+      updatedBoard.user,
+      updatedBoard.role as BoardRolesEnum,
+    );
+  }
+
+  async isBoardMemberAnAdmin(
+    userId: number,
+    boardId: number,
+  ): Promise<boolean> {
+    const board = await this.prisma.boardMembership.findFirst({
+      where: { boardId, userId },
+    });
+
+    return board && board.role === BoardRolesEnum.ADMIN;
   }
 }

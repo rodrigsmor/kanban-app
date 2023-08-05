@@ -1,7 +1,9 @@
 import { BoardService } from './board.service';
 import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
+import { UserDto } from '../user/dto';
+import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 
 @Controller('/api/board')
 export class BoardController {
@@ -11,7 +13,7 @@ export class BoardController {
   async getUserBoards(
     @UserId() userId: number,
     @Query('limit') limit?: number,
-  ): Promise<any> {
+  ): Promise<BoardSummaryDto[]> {
     return this.boardService.getUserBoards(userId, limit);
   }
 
@@ -34,5 +36,15 @@ export class BoardController {
     @Body() newBoard: BoardCreateDto,
   ): Promise<BoardSummaryDto> {
     return this.boardService.createNewBoard(userId, newBoard);
+  }
+
+  @Patch('/:boardId/')
+  async updateMemberRole(
+    @Param('boardId') boardId: number,
+    @Query('memberId') memberId: number,
+    @Query('role') role: BoardRolesEnum,
+    @UserId() userId: number,
+  ): Promise<UserDto> {
+    return this.boardService.updateMemberRole(userId, boardId, memberId, role);
   }
 }
