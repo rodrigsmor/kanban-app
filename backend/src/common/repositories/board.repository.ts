@@ -115,6 +115,16 @@ export class BoardRepository {
     });
   }
 
+  async findBoardMembershipByMemberEmail(
+    email: string,
+    boardId: number,
+  ): Promise<BoardMembershipType> {
+    return this.prisma.boardMembership.findFirst({
+      where: { user: { email }, boardId },
+      include: membershipIncludeTemplate,
+    });
+  }
+
   async updateBoardMembership(
     membershipId: number,
     data: BoardMembershipUpdateData,
@@ -126,7 +136,7 @@ export class BoardRepository {
     });
   }
 
-  async isBoardMemberAnAdmin(
+  async checkIfBoardMemberIsAdmin(
     userId: number,
     boardId: number,
   ): Promise<boolean> {
