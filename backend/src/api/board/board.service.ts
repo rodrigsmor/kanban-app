@@ -18,6 +18,34 @@ export class BoardService {
     private readonly userService: UserService,
   ) {}
 
+  async getUserBoards(userId: number, quantity?: number): Promise<any> {
+    const participatingBoards = await this.prisma.boardMembership.findMany({
+      where: { userId },
+      include: {
+        board: {
+          include: {
+            columns: {
+              include: { cards: true },
+            },
+            owner: true,
+            members: { select: { user: true, role: true } },
+          },
+        },
+      },
+      ...(quantity ? { take: quantity } : {}),
+    });
+
+    if (!participatingBoards) return [];
+
+    const summaryBoards: BoardSummaryDto[] = participatingBoards.map(
+      (board) => {
+        return new BoardSummaryDto(board.board);
+      },
+    );
+
+    return summaryBoards;
+  }
+
   async getOwnedBoards(userId: number): Promise<BoardSummaryDto[]> {
     const boards = await this.prisma.board.findMany({
       where: { ownerId: userId },
