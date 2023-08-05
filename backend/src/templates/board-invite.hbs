@@ -3,12 +3,73 @@
 
 <head>
   <title>Email Invitation</title>
+  <style>
+    .main-container {
+      max-width: 100vw;
+      overflow: hidden;
+      min-height: 100vh;
+      padding: 12% 6%;
+      background-color: #F0F1F5;
+    }
+
+    .logo-header {
+      width: 100%;
+      max-width: 100%;
+      margin-bottom: 48px;
+    }
+
+    .content-body {
+      width: 100%;
+      display: flex;
+      max-width: 100%;
+      flex-direction: column;
+    }
+
+    .greetings-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0E1424;
+    }
+
+    .button-link {
+      width: 230px;
+      height: 40px;
+      display: flex;
+      color: #F0F1F5;
+      font-weight: 500;
+      align-items: center;
+      border-radius: 12px;
+      text-decoration: none;
+      justify-content: center;
+      background-color: #2E4275;
+    }
+
+    .text-description {
+      font-size: 16px;
+      opacity: .6;
+      width: 100%;
+      max-width: 100%;
+      color: #0E1424;
+    }
+  </style>
 </head>
 
 <body>
-  <p>Hello {{name}},</p>
-  <p>You have been invited to join the board. Click the link below to accept the invitation:</p>
-  <a href="http://localhost:3000/app/board/invitation/accept?invite={{invitationLink}}">Accept Invitation</a>
+  <main class="main-container">
+    <header class="logo-header">
+      logo
+    </header>
+    <section class="content-body">
+      <h2 class="greetings-text">Hello, {{name}} 👋🏽</h2>
+      <p class="text-description">
+        You have just been invited to become a member of the <strong>"{{boardName}}"</strong> board. By joining this board, you will be able to see
+        the tasks and organize yourself to become more productive and bring success to your team.
+      </p>
+      <a class="button-link" href="http://localhost:3000/app/board/invitation/accept?token={{invitationLink}}">
+        Accept Invitation
+      </a>
+    </section>
+  </main>
 </body>
 
 </html>
