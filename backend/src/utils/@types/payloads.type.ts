@@ -27,5 +27,6 @@ export type BoardMembershipType = Prisma.BoardMembershipGetPayload<{
         members: { select: { user: true; role: true } };
       };
     };
+    user: true;
   };
 }>;
