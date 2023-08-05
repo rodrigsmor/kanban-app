@@ -1,6 +1,15 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { BoardService } from './board.service';
 import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
-import { Body, Controller, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
 import { UserDto } from '../user/dto';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';

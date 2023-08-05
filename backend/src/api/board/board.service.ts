@@ -5,39 +5,28 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { UserDto } from '../user/dto';
 import { UserService } from '../user/user.service';
 import { BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
-import { UserDto } from '../user/dto';
+import { BoardRepository } from '../../common/repositories/board.repository';
 
 @Injectable()
 export class BoardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly boardRepository: BoardRepository,
   ) {}
 
   async getUserBoards(
     userId: number,
     quantity?: number,
   ): Promise<BoardSummaryDto[]> {
-    const participatingBoards = await this.prisma.boardMembership.findMany({
-      where: { userId },
-      include: {
-        board: {
-          include: {
-            columns: {
-              include: { cards: true },
-            },
-            owner: true,
-            members: { select: { user: true, role: true } },
-          },
-        },
-      },
-      ...(quantity ? { take: quantity } : {}),
-    });
+    const participatingBoards =
+      await this.boardRepository.findBoardMembershipsByUserId(userId, quantity);
 
     if (!participatingBoards) return [];
 
@@ -50,17 +39,14 @@ export class BoardService {
     return summaryBoards;
   }
 
-  async getOwnedBoards(userId: number): Promise<BoardSummaryDto[]> {
-    const boards = await this.prisma.board.findMany({
-      where: { ownerId: userId },
-      include: {
-        columns: {
-          include: { cards: true },
-        },
-        owner: true,
-        members: { select: { user: true, role: true } },
-      },
-    });
+  async getOwnedBoards(
+    userId: number,
+    quantity?: number,
+  ): Promise<BoardSummaryDto[]> {
+    const boards = await this.boardRepository.findOwnedBoardsByUserId(
+      userId,
+      quantity,
+    );
 
     if (!boards) return [];
 
@@ -72,18 +58,7 @@ export class BoardService {
   }
 
   async getBoard(userId: number, boardId: number): Promise<BoardDto> {
-    const board = await this.prisma.board.findUnique({
-      where: {
-        id: boardId,
-      },
-      include: {
-        columns: {
-          include: { cards: true },
-        },
-        owner: true,
-        members: { select: { user: true, role: true } },
-      },
-    });
+    const board = await this.boardRepository.findBoardById(boardId, userId);
 
     if (!board)
       throw new NotFoundException('The board provided does not seem to exist');
@@ -99,35 +74,18 @@ export class BoardService {
     newBoard: BoardCreateDto,
   ): Promise<BoardSummaryDto> {
     try {
-      const board = await this.prisma.board.create({
-        data: {
-          name: newBoard.name,
-          description: newBoard.description,
-          ownerId: userId,
-          columns: {
-            create: [
-              { title: '⏳ pending', columnIndex: 0 },
-              { title: '🚧 in progress', columnIndex: 1 },
-              { title: '✅ done', columnIndex: 2 },
-            ],
-          },
-        },
-        include: {
-          columns: {
-            include: { cards: true },
-          },
-          owner: true,
-          members: true,
-        },
-      });
-
-      const boardCreated = await this.addMemberToBoard(
+      const boardCreated = await this.boardRepository.createBoard(
         userId,
-        board.id,
+        newBoard,
+      );
+
+      const boardWithMember = await this.addMemberToBoard(
+        userId,
+        boardCreated.id,
         BoardRolesEnum.ADMIN,
       );
 
-      return new BoardSummaryDto(boardCreated);
+      return new BoardSummaryDto(boardWithMember);
     } catch (error) {
       throw new InternalServerErrorException(
         error.message || 'It was not possible to create a new board',
@@ -156,20 +114,12 @@ export class BoardService {
         'the provided board does not seem to exist',
       );
 
-    await this.prisma.boardMembership.create({
-      data: { boardId, userId: memberId, role: memberRole },
-    });
+    await this.boardRepository.addUserToBoard(memberId, boardId, memberRole);
 
-    const updatedBoard = await this.prisma.board.findUnique({
-      where: { id: boardId },
-      include: {
-        columns: {
-          include: { cards: true },
-        },
-        owner: true,
-        members: { select: { user: true, role: true } },
-      },
-    });
+    const updatedBoard = await this.boardRepository.findBoardById(
+      boardId,
+      memberId,
+    );
 
     return updatedBoard;
   }
@@ -180,7 +130,10 @@ export class BoardService {
     memberId: number,
     role: BoardRolesEnum,
   ): Promise<UserDto> {
-    const isAdmin = await this.isBoardMemberAnAdmin(userId, boardId);
+    const isAdmin = await this.boardRepository.isBoardMemberAnAdmin(
+      userId,
+      boardId,
+    );
 
     if (!isAdmin)
       throw new ForbiddenException('You cannot perform this change');
@@ -188,35 +141,24 @@ export class BoardService {
     if (!(role in BoardRolesEnum))
       throw new BadRequestException('the role provided is not a valid role');
 
-    const board = await this.prisma.boardMembership.findFirst({
-      where: { boardId, userId: memberId },
-    });
+    const membership = await this.boardRepository.findBoardMembershipByIds(
+      boardId,
+      memberId,
+    );
 
-    if (!board)
+    if (!membership)
       throw new BadRequestException(
         'the member provided is not a participant in this board',
       );
 
-    const updatedBoard = await this.prisma.boardMembership.update({
-      where: { id: board.id },
-      data: { role },
-      include: { user: true },
-    });
+    const updatedBoard = await this.boardRepository.updateBoardMembership(
+      membership.id,
+      { role },
+    );
 
     return UserDto.fromUser(
       updatedBoard.user,
       updatedBoard.role as BoardRolesEnum,
     );
-  }
-
-  async isBoardMemberAnAdmin(
-    userId: number,
-    boardId: number,
-  ): Promise<boolean> {
-    const board = await this.prisma.boardMembership.findFirst({
-      where: { boardId, userId },
-    });
-
-    return board && board.role === BoardRolesEnum.ADMIN;
   }
 }
