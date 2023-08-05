@@ -4,10 +4,7 @@ import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BoardService } from '../api/board/board.service';
 import { BoardSummaryDto } from '../api/board/dto/board-summary.dto';
-import {
-  BoardWithColumns,
-  ColumnsWithCards,
-} from '../utils/@types/board.types';
+import { ColumnsWithCards } from '../utils/@types/board.types';
 import {
   BadRequestException,
   ForbiddenException,
@@ -17,6 +14,7 @@ import {
 import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 import { BoardPrismaType, ColumnPrismaType } from '../utils/@types';
 import { BoardDto } from '../api/board/dto/board.dto';
+import { BoardRolesEnum } from '../utils/enums';
 
 describe('BoardService', () => {
   let boardService: BoardService;
@@ -40,7 +38,7 @@ describe('BoardService', () => {
     id: 0,
     title: 'New column',
     updateAt: new Date(2024, 5, 1),
-    index: 0,
+    columnIndex: 0,
   };
 
   const mockBoards: BoardPrismaType = {
@@ -70,11 +68,11 @@ describe('BoardService', () => {
     prismaService = moduleRef.get<PrismaService>(PrismaService);
   });
 
-  describe('getUserBoards', () => {
+  describe('getOwnedBoards', () => {
     it('should return an empty array when the user has no boards', async () => {
       jest.spyOn(prismaService.board, 'findMany').mockResolvedValueOnce(null);
 
-      const result = await boardService.getUserBoards(203);
+      const result = await boardService.getOwnedBoards(203);
 
       expect(result).toStrictEqual([]);
       expect(prismaService.board.findMany).toBeCalledWith({
@@ -84,7 +82,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -94,7 +92,7 @@ describe('BoardService', () => {
         .spyOn(prismaService.board, 'findMany')
         .mockResolvedValueOnce([mockBoards]);
 
-      const result = await boardService.getUserBoards(203);
+      const result = await boardService.getOwnedBoards(203);
 
       expect(result).toStrictEqual([mockSummaryDto]);
       expect(prismaService.board.findMany).toBeCalledWith({
@@ -104,7 +102,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -129,7 +127,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -160,7 +158,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -185,7 +183,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });
@@ -222,6 +220,7 @@ describe('BoardService', () => {
             password: 'hyper-secure-password',
             profilePicture: '/path-to-image',
           },
+          role: 'ADMIN',
         },
       ],
     };
@@ -249,9 +248,9 @@ describe('BoardService', () => {
           ownerId: 203,
           columns: {
             create: [
-              { title: '⏳ pending', index: 0 },
-              { title: '🚧 in progress', index: 1 },
-              { title: '✅ done', index: 2 },
+              { title: '⏳ pending', columnIndex: 0 },
+              { title: '🚧 in progress', columnIndex: 1 },
+              { title: '✅ done', columnIndex: 2 },
             ],
           },
         },
@@ -285,6 +284,7 @@ describe('BoardService', () => {
       members: [
         {
           user: mockOwner,
+          role: 'OBSERVER',
         },
       ],
     };
@@ -297,7 +297,7 @@ describe('BoardService', () => {
       jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
 
       try {
-        await boardService.addMemberToBoard(203, 152);
+        await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
       } catch (error) {
         expect(prismaService.user.findUnique).toBeCalledWith({
           where: { id: 203 },
@@ -322,7 +322,7 @@ describe('BoardService', () => {
       jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
 
       try {
-        await boardService.addMemberToBoard(203, 152);
+        await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
       } catch (error) {
         expect(prismaService.user.findUnique).toBeCalledWith({
           where: { id: 203 },
@@ -353,7 +353,11 @@ describe('BoardService', () => {
         .spyOn(prismaService.board, 'findUnique')
         .mockResolvedValueOnce(mockBoardsWithMembers);
 
-      const result = await boardService.addMemberToBoard(203, 152);
+      const result = await boardService.addMemberToBoard(
+        203,
+        152,
+        BoardRolesEnum.OBSERVER,
+      );
 
       expect(result).toBe(mockBoardsWithMembers);
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
@@ -363,7 +367,7 @@ describe('BoardService', () => {
         where: { id: 152 },
       });
       expect(prismaService.boardMembership.create).toBeCalledWith({
-        data: { boardId: 152, userId: 203 },
+        data: { boardId: 152, userId: 203, role: BoardRolesEnum.OBSERVER },
       });
       expect(prismaService.board.findUnique).toHaveBeenLastCalledWith({
         where: { id: 152 },
@@ -372,7 +376,7 @@ describe('BoardService', () => {
             include: { cards: true },
           },
           owner: true,
-          members: { select: { user: true } },
+          members: { select: { user: true, role: true } },
         },
       });
     });

@@ -1,4 +1,5 @@
 import { User } from '@prisma/client';
+import { BoardRolesEnum } from '../../../utils/enums/board-roles.enum';
 import {
   IsEmail,
   IsNotEmpty,
@@ -28,12 +29,14 @@ export class UserDto {
   @IsOptional()
   profilePicture: string;
 
-  constructor(partial: Partial<User>) {
-    Object.assign(this, partial);
+  role?: BoardRolesEnum;
+
+  constructor(partial: Partial<User>, role?: BoardRolesEnum) {
+    Object.assign(this, partial, { role });
   }
 
-  static fromUser(user: User): UserDto {
+  static fromUser(user: User, role?: BoardRolesEnum): UserDto {
     delete user.password;
-    return new UserDto(user);
+    return new UserDto(user, role);
   }
 }
