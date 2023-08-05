@@ -8,11 +8,11 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { UserDto } from '../user/dto';
 import { BoardService } from './board.service';
+import { BoardRolesEnum } from '../../utils/enums';
 import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
-import { UserDto } from '../user/dto';
-import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 
 @Controller('/api/board')
 export class BoardController {
@@ -27,8 +27,11 @@ export class BoardController {
   }
 
   @Get('/owned')
-  async getOwnedBoards(@UserId() userId: number): Promise<BoardSummaryDto[]> {
-    return this.boardService.getOwnedBoards(userId);
+  async getOwnedBoards(
+    @UserId() userId: number,
+    @Query('limit') limit?: number,
+  ): Promise<BoardSummaryDto[]> {
+    return this.boardService.getOwnedBoards(userId, limit);
   }
 
   @Get('/:id')
