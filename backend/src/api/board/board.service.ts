@@ -18,7 +18,7 @@ export class BoardService {
     private readonly userService: UserService,
   ) {}
 
-  async getUserBoards(userId: number): Promise<BoardSummaryDto[]> {
+  async getOwnedBoards(userId: number): Promise<BoardSummaryDto[]> {
     const boards = await this.prisma.board.findMany({
       where: { ownerId: userId },
       include: {

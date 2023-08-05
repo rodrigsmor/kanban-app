@@ -7,9 +7,9 @@ import { UserId } from '../../common/decorators/get-user-id.decorator';
 export class BoardController {
   constructor(private readonly boardService: BoardService) {}
 
-  @Get('/')
+  @Get('/owned')
   async getUserBoards(@UserId() userId: number): Promise<BoardSummaryDto[]> {
-    return this.boardService.getUserBoards(userId);
+    return this.boardService.getOwnedBoards(userId);
   }
 
   @Get('/:id')
