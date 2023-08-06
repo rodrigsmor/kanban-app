@@ -20,14 +20,19 @@ export class EmailService {
     });
   }
 
-  async sendInviteEmail(name: string, email: string, invitationLink: string) {
+  async sendInviteEmail(
+    name: string,
+    boardName: string,
+    email: string,
+    invitationLink: string,
+  ) {
     try {
       const template = fs.readFileSync(
         './src/templates/board-invite.hbs',
         'utf-8',
       );
       const compiledTemplate = handlebars.compile(template);
-      const html = compiledTemplate({ name, invitationLink });
+      const html = compiledTemplate({ name, boardName, invitationLink });
 
       await this.transporter.sendMail({
         from: process.env.MAILER_SENDER,
