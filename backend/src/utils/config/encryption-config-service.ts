@@ -8,13 +8,19 @@ export class EncryptConfigService {
   private readonly salt = process.env.ENCRYPT_SALT;
 
   async encrypt(data: InviteDataTypes): Promise<string> {
-    const dataString = JSON.stringify(data);
-    const key = await this.generateKey(`${process.env.JWT_SECRET_KEY}-invite`);
-    const iv = randomBytes(16);
-    const cipher = createCipheriv(this.algorithm, key, iv);
-    let encryptedData = cipher.update(dataString, 'utf-8', 'hex');
-    encryptedData += cipher.final('hex');
-    return iv.toString('hex') + encryptedData;
+    try {
+      const dataString = JSON.stringify(data);
+      const key = await this.generateKey(
+        `${process.env.JWT_SECRET_KEY}-invite`,
+      );
+      const iv = randomBytes(16);
+      const cipher = createCipheriv(this.algorithm, key, iv);
+      let encryptedData = cipher.update(dataString, 'utf-8', 'hex');
+      encryptedData += cipher.final('hex');
+      return iv.toString('hex') + encryptedData;
+    } catch (error) {
+      throw new Error('Failed to encrypt the data');
+    }
   }
 
   async decrypt(encryptedData: string): Promise<InviteDataTypes> {
@@ -29,7 +35,6 @@ export class EncryptConfigService {
       decryptedData += decipher.final('utf8');
       return JSON.parse(decryptedData);
     } catch (error) {
-      console.error('Error while decrypting:', error.message);
       throw new Error('Failed to decrypt the data');
     }
   }
