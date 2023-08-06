@@ -3,17 +3,21 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { BoardInviteDto } from './dto';
+import { BoardDto, BoardInviteDto } from './dto';
 import { InviteDataTypes } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardRepository, InviteRepository } from '../../common/repositories';
 import { EncryptConfigService } from '../../utils/config/encryption-config-service';
+import { EmailService } from '../../utils/config/email-config-service';
+import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 
 @Injectable()
 export class BoardInviteService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
     private readonly crypt: EncryptConfigService,
     private readonly boardRepository: BoardRepository,
     private readonly inviteRepository: InviteRepository,
@@ -66,6 +70,56 @@ export class BoardInviteService {
       expireAt,
     };
 
-    return this.crypt.encrypt(inviteData);
+    const user = await this.prisma.user.findUnique({
+      where: { email: boardInviteDto.email },
+    });
+
+    const encryptedData = await this.crypt.encrypt(inviteData);
+
+    await this.emailService.sendInviteEmail(
+      user?.firstName || boardInviteDto.email,
+      board.name,
+      boardInviteDto.email,
+      encryptedData,
+    );
+
+    return encryptedData;
+  }
+
+  async acceptInvite(userId: number, token: string): Promise<BoardDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    const inviteData: InviteDataTypes = await this.crypt.decrypt(token);
+
+    if (!user || inviteData.email !== user.email)
+      throw new UnauthorizedException(
+        'You are not authorized to perform this action',
+      );
+
+    if (new Date(inviteData.expireAt).getTime() <= Date.now()) {
+      throw new ForbiddenException('the invitation has expired');
+    }
+
+    const isPending = await this.inviteRepository.checkIfInviteIsPending(
+      inviteData.inviteId,
+    );
+
+    if (!isPending)
+      throw new BadRequestException('the invitation was already accepted');
+
+    const newData = await this.inviteRepository.updateInvite(
+      inviteData.inviteId,
+      { isPending: false },
+    );
+
+    const board = await this.boardRepository.addUserToBoard(
+      userId,
+      newData.boardId,
+      BoardRolesEnum.CONTRIBUTOR,
+    );
+
+    return new BoardDto(board.board);
   }
 }

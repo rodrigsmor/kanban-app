@@ -12,6 +12,7 @@ import { AuthMiddleware } from '../../utils/middlewares/auth.middleware';
 import { MulterConfigService } from '../../utils/config/multer-config-service';
 import { BoardRepository, InviteRepository } from '../../common/repositories';
 import { EncryptConfigService } from '../../utils/config/encryption-config-service';
+import { EmailService } from '../../utils/config/email-config-service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { EncryptConfigService } from '../../utils/config/encryption-config-servi
     UserService,
     AuthService,
     JwtService,
+    EmailService,
     PrismaService,
     BoardRepository,
     InviteRepository,
