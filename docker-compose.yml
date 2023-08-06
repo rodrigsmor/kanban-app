@@ -21,6 +21,7 @@ services:
       MAILER_PASS: ${MAILER_PASS}
       MAILER_SENDER: ${MAILER_SENDER}
       MAILER_HOST: ${MAILER_HOST}
+      ENCRYPT_SALT: ${ENCRYPT_SALT}
     ports:
       - "${API_PORT}:3000"
     depends_on:
