@@ -5,7 +5,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
 @Injectable()
 export class EncryptConfigService {
   private readonly algorithm = 'aes-256-cbc';
-  private readonly salt = 'fc45a23b987e1fbd68e1dd2067cf0287';
+  private readonly salt = process.env.ENCRYPT_SALT;
 
   async encrypt(data: InviteDataTypes): Promise<string> {
     const dataString = JSON.stringify(data);
