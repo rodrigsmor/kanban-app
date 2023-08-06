@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -19,6 +22,7 @@ export class BoardController {
   constructor(private readonly boardService: BoardService) {}
 
   @Get('/')
+  @HttpCode(HttpStatus.ACCEPTED)
   async getUserBoards(
     @UserId() userId: number,
     @Query('limit') limit?: number,
@@ -27,6 +31,7 @@ export class BoardController {
   }
 
   @Get('/owned')
+  @HttpCode(HttpStatus.ACCEPTED)
   async getOwnedBoards(
     @UserId() userId: number,
     @Query('limit') limit?: number,
@@ -35,6 +40,7 @@ export class BoardController {
   }
 
   @Get('/:id')
+  @HttpCode(HttpStatus.ACCEPTED)
   async getBoard(
     @UserId() userId: number,
     @Param('id') boardId: number,
@@ -43,6 +49,7 @@ export class BoardController {
   }
 
   @Post('/')
+  @HttpCode(HttpStatus.CREATED)
   async createNewBoard(
     @UserId() userId: number,
     @Body() newBoard: BoardCreateDto,
@@ -51,6 +58,7 @@ export class BoardController {
   }
 
   @Patch('/:boardId/')
+  @HttpCode(HttpStatus.OK)
   async updateMemberRole(
     @Param('boardId') boardId: number,
     @Query('memberId') memberId: number,
