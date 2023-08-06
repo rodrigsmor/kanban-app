@@ -15,6 +15,11 @@ const includeInvite = {
   },
 };
 
+interface InviteUpdateDataType {
+  expireAt?: Date;
+  isPending?: boolean;
+}
+
 @Injectable()
 export class InviteRepository {
   constructor(
@@ -32,8 +37,8 @@ export class InviteRepository {
     });
 
     if (invite) {
-      if (invite.expireAt.getTime() <= Date.now()) {
-        return await this.updateInvite(invite.id, expireAt);
+      if (invite.expireAt.getTime() <= Date.now() && invite.isPending) {
+        return await this.updateInvite(invite.id, { expireAt });
       } else {
         throw new ForbiddenException(
           'there is a pending invitation for this member',
@@ -47,13 +52,21 @@ export class InviteRepository {
     });
   }
 
+  async checkIfInviteIsPending(inviteId: number): Promise<boolean> {
+    const invite = await this.prisma.boardInvite.findUnique({
+      where: { id: inviteId },
+    });
+
+    return invite.isPending;
+  }
+
   async updateInvite(
     inviteId: number,
-    expireAt: Date,
+    data: InviteUpdateDataType,
   ): Promise<InvitePrismaType> {
     return this.prisma.boardInvite.update({
       where: { id: inviteId },
-      data: { expireAt },
+      data,
       include: includeInvite,
     });
   }
