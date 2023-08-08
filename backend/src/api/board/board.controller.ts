@@ -67,4 +67,13 @@ export class BoardController {
   ): Promise<UserDto> {
     return this.boardService.updateMemberRole(userId, boardId, memberId, role);
   }
+
+  @Delete('/:boardId')
+  @HttpCode(HttpStatus.OK)
+  async initiateBoardDeletion(
+    @UserId() userId: number,
+    @Param('boardId') boardId: number,
+  ): Promise<string> {
+    return this.boardService.initiateBoardDeletion(userId, boardId);
+  }
 }
