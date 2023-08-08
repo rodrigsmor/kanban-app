@@ -20,24 +20,23 @@ export class EmailService {
     });
   }
 
-  async sendInviteEmail(
+  async sendEmail(
     name: string,
     boardName: string,
     email: string,
-    invitationLink: string,
+    token: string,
+    templatePath: string,
+    subject?: string,
   ) {
     try {
-      const template = fs.readFileSync(
-        './src/templates/board-invite.hbs',
-        'utf-8',
-      );
+      const template = fs.readFileSync(templatePath, 'utf-8');
       const compiledTemplate = handlebars.compile(template);
-      const html = compiledTemplate({ name, boardName, invitationLink });
+      const html = compiledTemplate({ name, boardName, token });
 
       await this.transporter.sendMail({
         from: process.env.MAILER_SENDER,
         to: email,
-        subject: 'Invitation to Join Board',
+        subject: subject || 'Invitation to Join Board',
         html,
       });
     } catch (error) {

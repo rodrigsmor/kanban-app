@@ -21,6 +21,7 @@ model User {
   cards             CardAssignees[]
   password          String
   isAdmin           Boolean   @default(false)
+  twoFactors        TwoFactor[]
 }
 
 model Board {
@@ -42,7 +43,7 @@ model BoardMembership {
   id        Int     @id @default(autoincrement())
   role      String  @default("CONTRIBUTOR")
   boardId   Int
-  board     Board   @relation(fields: [boardId], references: [id])
+  board     Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
   userId    Int
   user      User    @relation(fields: [userId], references: [id])
 }
@@ -52,7 +53,7 @@ model Column {
   columnIndex       Int
   title             String
   boardId           Int
-  board             Board @relation(fields: [boardId], references: [id])
+  board             Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cover             String?
   cards             Card[]
   createdAt         DateTime  @default(now())
@@ -65,7 +66,7 @@ model Card {
   description       String
   columnId          Int
   assignees         CardAssignees[]
-  column            Column    @relation(fields: [columnId], references: [id])
+  column            Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
 }
@@ -73,7 +74,7 @@ model Card {
 model CardAssignees {
   id        Int     @id @default(autoincrement())
   cardId    Int
-  card      Card    @relation(fields: [cardId], references: [id])
+  card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
   userId    Int
   user      User    @relation(fields: [userId], references: [id])     
 }
@@ -81,7 +82,7 @@ model CardAssignees {
 model BoardInvite {
   id            Int @id @default(autoincrement())
   boardId       Int
-  board         Board @relation(fields: [boardId], references: [id])
+  board         Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
   email         String
   isPending     Boolean @default(true)
   expireAt      DateTime
@@ -95,4 +96,15 @@ model RefreshToken {
   refreshToken      String    @unique
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
+}
+
+model TwoFactor {
+  id                Int @id @default(autoincrement())
+  type              String @default("AUTHENTICATION")
+  token             String @unique
+  verificationCode  String
+  expireAt          DateTime
+  createdAt         DateTime @default(now())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id])
 }

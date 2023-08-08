@@ -76,11 +76,12 @@ export class BoardInviteService {
 
     const encryptedData = await this.crypt.encrypt(inviteData);
 
-    await this.emailService.sendInviteEmail(
+    await this.emailService.sendEmail(
       user?.firstName || boardInviteDto.email,
       board.name,
       boardInviteDto.email,
       encryptedData,
+      './src/templates/board-invite.hbs',
     );
 
     return encryptedData;

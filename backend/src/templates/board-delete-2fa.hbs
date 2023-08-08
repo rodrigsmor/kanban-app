@@ -62,12 +62,11 @@
     <section class="content-body">
       <h2 class="greetings-text">Hello, {{name}} 👋🏽</h2>
       <p class="text-description">
-        You have just been invited to become a member of the <strong>"{{boardName}}"</strong> board. By joining this board, you will be able to see
-        the tasks and organize yourself to become more productive and bring success to your team.
+        We have received a request of deletion of your board: <strong>"{{boardName}}"</strong> board. Belows we have provide you a code to identify that you are actually willing to proceed with this choice.
       </p>
-      <a class="button-link" href="http://localhost:3000/app/board/invitation/accept?token={{token}}">
-        Accept Invitation
-      </a>
+      <div>
+        {{token}}
+      </div>
     </section>
   </main>
 </body>

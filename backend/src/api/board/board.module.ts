@@ -13,6 +13,7 @@ import { MulterConfigService } from '../../utils/config/multer-config-service';
 import { BoardRepository, InviteRepository } from '../../common/repositories';
 import { EncryptConfigService } from '../../utils/config/encryption-config-service';
 import { EmailService } from '../../utils/config/email-config-service';
+import { TwoFactorService } from '../../auth/two-factor.service';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EmailService } from '../../utils/config/email-config-service';
     PrismaService,
     BoardRepository,
     InviteRepository,
+    TwoFactorService,
     BoardInviteService,
     EncryptConfigService,
   ],

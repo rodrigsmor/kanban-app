@@ -1,16 +1,24 @@
 import {
+  BoardCreateDto,
+  BoardDto,
+  BoardSummaryDto,
+  DeleteBoardDTO,
+} from './dto';
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserDto } from '../user/dto';
 import { UserService } from '../user/user.service';
 import { BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
+import { TwoFactorService } from '../../auth/two-factor.service';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
+import { EmailService } from '../../utils/config/email-config-service';
 import { BoardRepository } from '../../common/repositories/board.repository';
 
 @Injectable()
@@ -18,8 +26,10 @@ export class BoardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly emailService: EmailService,
     private readonly boardRepository: BoardRepository,
-  ) { }
+    private readonly twoFactorService: TwoFactorService,
+  ) {}
 
   async getUserBoards(
     userId: number,
@@ -160,5 +170,70 @@ export class BoardService {
       updatedBoard.user,
       updatedBoard.role as BoardRolesEnum,
     );
+  }
+
+  async initiateBoardDeletion(
+    userId: number,
+    boardId: number,
+  ): Promise<string> {
+    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+      userId,
+      boardId,
+    );
+
+    if (!isAdmin)
+      throw new ForbiddenException(
+        'you do not have permission to perform this action',
+      );
+
+    const user = await this.userService.getCurrentUser(userId);
+    const board = await this.boardRepository.findBoardById(boardId, userId);
+
+    const expirationDate = new Date(Date.now() + 30 * 60 * 1000);
+
+    const { verificationCode, token } =
+      await this.twoFactorService.generateTwoFactorToken(
+        user.id,
+        user.email,
+        expirationDate,
+      );
+
+    await this.emailService.sendEmail(
+      user.firstName,
+      board.name,
+      user.email,
+      verificationCode,
+      './src/templates/board-delete-2fa.hbs',
+      'New request to delete a board',
+    );
+
+    return token;
+  }
+
+  async deleteBoard(userId: number, boardId: number, authData: DeleteBoardDTO) {
+    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+      userId,
+      boardId,
+    );
+
+    if (!isAdmin)
+      throw new ForbiddenException(
+        'you are not allowed to perform this action',
+      );
+
+    const payload = await this.twoFactorService.validateTwoFactorTokens(
+      userId,
+      authData.token,
+      authData.verificationCode,
+    );
+
+    if (!payload)
+      throw new UnauthorizedException(
+        'It was not possible to delete your board',
+      );
+
+    await this.prisma.board.delete({
+      where: { id: boardId },
+    });
   }
 }
