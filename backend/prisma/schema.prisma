@@ -101,7 +101,7 @@ model RefreshToken {
 model TwoFactor {
   id                Int @id @default(autoincrement())
   type              String @default("AUTHENTICATION")
-  token             String
+  token             String @unique
   verificationCode  String
   expireAt          DateTime
   createdAt         DateTime @default(now())
