@@ -1,16 +1,22 @@
 import {
+  BoardCreateDto,
+  BoardDto,
+  BoardSummaryDto,
+  DeleteBoardDTO,
+} from './dto';
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserDto } from '../user/dto';
 import { UserService } from '../user/user.service';
 import { BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TwoFactorService } from '../../auth/two-factor.service';
-import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 import { EmailService } from '../../utils/config/email-config-service';
 import { BoardRepository } from '../../common/repositories/board.repository';
@@ -202,5 +208,32 @@ export class BoardService {
     );
 
     return token;
+  }
+
+  async deleteBoard(userId: number, boardId: number, authData: DeleteBoardDTO) {
+    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+      userId,
+      boardId,
+    );
+
+    if (!isAdmin)
+      throw new ForbiddenException(
+        'you are not allowed to perform this action',
+      );
+
+    const payload = await this.twoFactorService.validateTwoFactorTokens(
+      userId,
+      authData.token,
+      authData.verificationCode,
+    );
+
+    if (!payload)
+      throw new UnauthorizedException(
+        'It was not possible to delete your board',
+      );
+
+    await this.prisma.board.delete({
+      where: { id: boardId },
+    });
   }
 }

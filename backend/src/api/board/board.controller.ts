@@ -1,4 +1,10 @@
 import {
+  BoardCreateDto,
+  BoardDto,
+  BoardSummaryDto,
+  DeleteBoardDTO,
+} from './dto';
+import {
   Body,
   Controller,
   Delete,
@@ -8,13 +14,11 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { UserDto } from '../user/dto';
 import { BoardService } from './board.service';
 import { BoardRolesEnum } from '../../utils/enums';
-import { BoardCreateDto, BoardDto, BoardSummaryDto } from './dto';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
 
 @Controller('/api/board')
@@ -68,12 +72,22 @@ export class BoardController {
     return this.boardService.updateMemberRole(userId, boardId, memberId, role);
   }
 
-  @Delete('/:boardId')
-  @HttpCode(HttpStatus.OK)
+  @Post('/delete/:boardId/init')
+  @HttpCode(HttpStatus.CREATED)
   async initiateBoardDeletion(
     @UserId() userId: number,
     @Param('boardId') boardId: number,
   ): Promise<string> {
     return this.boardService.initiateBoardDeletion(userId, boardId);
+  }
+
+  @Delete('/:boardId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBoard(
+    @UserId() userId: number,
+    @Param('boardId') boardId: number,
+    @Body() authData: DeleteBoardDTO,
+  ) {
+    return await this.boardService.deleteBoard(userId, boardId, authData);
   }
 }
