@@ -21,6 +21,7 @@ model User {
   cards             CardAssignees[]
   password          String
   isAdmin           Boolean   @default(false)
+  twoFactors        TwoFactor[]
 }
 
 model Board {
@@ -95,4 +96,15 @@ model RefreshToken {
   refreshToken      String    @unique
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
+}
+
+model TwoFactor {
+  id                Int @id @default(autoincrement())
+  type              String @default("AUTHENTICATION")
+  token             String
+  verificationCode  String
+  expireAt          DateTime
+  createdAt         DateTime @default(now())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id])
 }
