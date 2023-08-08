@@ -26,6 +26,7 @@ export class EmailService {
     email: string,
     token: string,
     templatePath: string,
+    subject?: string,
   ) {
     try {
       const template = fs.readFileSync(templatePath, 'utf-8');
@@ -35,7 +36,7 @@ export class EmailService {
       await this.transporter.sendMail({
         from: process.env.MAILER_SENDER,
         to: email,
-        subject: 'Invitation to Join Board',
+        subject: subject || 'Invitation to Join Board',
         html,
       });
     } catch (error) {
