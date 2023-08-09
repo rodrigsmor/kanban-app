@@ -8,6 +8,7 @@ import {
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
@@ -24,6 +25,7 @@ import { EmailService } from '../utils/config/email-config-service';
 import { BoardSummaryDto } from '../api/board/dto/board-summary.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
 import { UserDto } from '../api/user/dto/user.dto';
+import { DeleteBoardDTO } from '../api/board/dto/delete-board.dto';
 
 describe('BoardService', () => {
   let boardService: BoardService;
@@ -543,6 +545,118 @@ describe('BoardService', () => {
         mockBoardMembership[0].id,
         { role: BoardRolesEnum.ADMIN },
       );
+    });
+  });
+
+  describe('deleteBoard', () => {
+    const mockToken = 'token-to-identify';
+    const mockVerificationCode = '282929-test';
+
+    const mockAuthData: DeleteBoardDTO = {
+      token: mockToken,
+      verificationCode: mockVerificationCode,
+    };
+
+    it('should throw ForbiddenException if user is not an admin', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(false);
+
+      jest
+        .spyOn(twoFactorService, 'validateTwoFactorTokens')
+        .mockResolvedValueOnce(null);
+
+      jest.spyOn(prismaService.board, 'delete').mockResolvedValueOnce(null);
+
+      try {
+        await boardService.deleteBoard(
+          mockOwner.id,
+          mockBoardDto.id,
+          mockAuthData,
+        );
+      } catch (error) {
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          mockOwner.id,
+          mockBoardDto.id,
+        );
+        expect(prismaService.board.delete).not.toBeCalled();
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'you are not allowed to perform this action',
+        );
+        expect(twoFactorService.validateTwoFactorTokens).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if tokens are invalid', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+
+      jest
+        .spyOn(twoFactorService, 'validateTwoFactorTokens')
+        .mockResolvedValueOnce(null);
+
+      jest.spyOn(prismaService.board, 'delete').mockResolvedValueOnce(null);
+
+      try {
+        await boardService.deleteBoard(
+          mockOwner.id,
+          mockBoardDto.id,
+          mockAuthData,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'It was not possible to delete your board',
+        );
+        expect(prismaService.board.delete).not.toBeCalled();
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          mockOwner.id,
+          mockBoardDto.id,
+        );
+        expect(twoFactorService.validateTwoFactorTokens).toBeCalledWith(
+          mockOwner.id,
+          mockAuthData.token,
+          mockAuthData.verificationCode,
+        );
+      }
+    });
+
+    it('should delete board successfully', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+
+      jest
+        .spyOn(twoFactorService, 'validateTwoFactorTokens')
+        .mockResolvedValueOnce({
+          email: 'test-email',
+          exp: 0,
+          iat: 0,
+          sub: 0,
+        });
+
+      jest.spyOn(prismaService.board, 'delete').mockResolvedValueOnce(null);
+
+      await boardService.deleteBoard(
+        mockOwner.id,
+        mockBoardDto.id,
+        mockAuthData,
+      );
+
+      expect(twoFactorService.validateTwoFactorTokens).toBeCalledWith(
+        mockOwner.id,
+        mockAuthData.token,
+        mockAuthData.verificationCode,
+      );
+      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        mockOwner.id,
+        mockBoardDto.id,
+      );
+      expect(prismaService.board.delete).toBeCalledWith({
+        where: { id: mockBoardDto.id },
+      });
     });
   });
 });
