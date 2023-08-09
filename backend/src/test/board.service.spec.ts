@@ -245,94 +245,79 @@ describe('BoardService', () => {
     });
   });
 
-  // describe('createNewBoard', () => {
-  //   const mockColumnsCreated: Array<ColumnsWithCards> = [
-  //     { ...mockColumns, title: '⏳ pending' },
-  //     { ...mockColumns, title: '🚧 in progress' },
-  //     { ...mockColumns, title: '✅ done' },
-  //   ];
+  describe('createNewBoard', () => {
+    const mockColumnsCreated: Array<ColumnsWithCards> = [
+      { ...mockColumns, title: '⏳ pending', columnIndex: 0 },
+      { ...mockColumns, title: '🚧 in progress', columnIndex: 1 },
+      { ...mockColumns, title: '✅ done', columnIndex: 2 },
+    ];
 
-  //   const mockBoardCreated: BoardPrismaType = {
-  //     ...mockBoards,
-  //     columns: mockColumnsCreated,
-  //     members: [],
-  //   };
+    const mockBoardCreated: BoardPrismaType = {
+      ...mockBoards,
+      columns: mockColumnsCreated,
+      members: [],
+    };
 
-  //   const mockNewBoard: BoardCreateDto = {
-  //     name: mockBoardCreated.name,
-  //     description: mockBoardCreated.description,
-  //   };
+    const mockNewBoard: BoardCreateDto = {
+      name: mockBoardCreated.name,
+      description: mockBoardCreated.description,
+    };
 
-  //   const mockBoardCreatedResponse: BoardPrismaType = {
-  //     ...mockBoardCreated,
-  //     members: [
-  //       {
-  //         user: {
-  //           email: 'test@user.com',
-  //           firstName: 'Test first name',
-  //           id: 203,
-  //           isAdmin: true,
-  //           lastName: 'Test last name',
-  //           password: 'hyper-secure-password',
-  //           profilePicture: '/path-to-image',
-  //         },
-  //         role: 'ADMIN',
-  //       },
-  //     ],
-  //   };
+    const mockBoardCreatedResponse: BoardPrismaType = {
+      ...mockBoardCreated,
+      members: [
+        {
+          user: {
+            email: 'test@user.com',
+            firstName: 'Test first name',
+            id: 203,
+            isAdmin: true,
+            lastName: 'Test last name',
+            password: 'hyper-secure-password',
+            profilePicture: '/path-to-image',
+          },
+          role: 'ADMIN',
+        },
+      ],
+    };
 
-  //   const mockBoardSummaryDTO: BoardSummaryDto = new BoardSummaryDto(
-  //     mockBoardCreatedResponse,
-  //   );
+    const mockBoardSummaryDTO: BoardSummaryDto = new BoardSummaryDto(
+      mockBoardCreatedResponse,
+    );
 
-  //   it('should create a new board and return a DTO summary of it', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'create')
-  //       .mockResolvedValueOnce(mockBoardCreated);
+    it('should create a new board and return a DTO summary of it', async () => {
+      jest
+        .spyOn(boardRepository, 'createBoard')
+        .mockResolvedValueOnce(mockBoardCreated);
 
-  //     jest
-  //       .spyOn(boardService, 'addMemberToBoard')
-  //       .mockResolvedValueOnce(mockBoardCreatedResponse);
+      jest
+        .spyOn(boardService, 'addMemberToBoard')
+        .mockResolvedValueOnce(mockBoardCreatedResponse);
 
-  //     const result = await boardService.createNewBoard(203, mockNewBoard);
+      const result = await boardService.createNewBoard(203, mockNewBoard);
 
-  //     expect(result).toStrictEqual(mockBoardSummaryDTO);
-  //     expect(prismaService.board.create).toBeCalledWith({
-  //       data: {
-  //         name: mockNewBoard.name,
-  //         description: mockNewBoard.description,
-  //         ownerId: 203,
-  //         columns: {
-  //           create: [
-  //             { title: '⏳ pending', columnIndex: 0 },
-  //             { title: '🚧 in progress', columnIndex: 1 },
-  //             { title: '✅ done', columnIndex: 2 },
-  //           ],
-  //         },
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: true,
-  //       },
-  //     });
-  //   });
+      expect(result).toStrictEqual(mockBoardSummaryDTO);
+      expect(boardRepository.createBoard).toBeCalledWith(203, mockNewBoard);
+      expect(boardService.addMemberToBoard).toBeCalledWith(
+        203,
+        mockBoardCreatedResponse.id,
+        BoardRolesEnum.ADMIN,
+      );
+    });
 
-  //   it('should throw a InternalServerErrorException when board creation fails', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'create')
-  //       .mockRejectedValueOnce(new Error(''));
+    it('should throw a InternalServerErrorException when board creation fails', async () => {
+      jest
+        .spyOn(prismaService.board, 'create')
+        .mockRejectedValueOnce(new Error(''));
 
-  //     try {
-  //       await boardService.createNewBoard(203, mockNewBoard);
-  //     } catch (error) {
-  //       expect(error).toBeInstanceOf(InternalServerErrorException);
-  //       expect(error.message).toBe('It was not possible to create a new board');
-  //     }
-  //   });
-  // });
+      try {
+        await boardService.createNewBoard(203, mockNewBoard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toBe('It was not possible to create a new board');
+      }
+    });
+  });
 
   // describe('addMemberToBoard', () => {
   //   const mockBoardsWithMembers: BoardPrismaType = {
