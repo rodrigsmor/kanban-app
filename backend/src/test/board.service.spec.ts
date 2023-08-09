@@ -155,7 +155,7 @@ describe('BoardService', () => {
   });
 
   describe('getUserBoards', () => {
-    it('should return an empty array when the user is not participating in any frame', async () => {
+    it('should return an empty array when the user is not participating in any board', async () => {
       jest
         .spyOn(boardRepository, 'findBoardMembershipsByUserId')
         .mockResolvedValueOnce(null);
@@ -208,86 +208,42 @@ describe('BoardService', () => {
     });
   });
 
-  // describe('getBoard', () => {
-  //   const mockUserId = 203;
-  //   const mockBoardId = 152;
+  describe('getBoard', () => {
+    const mockUserId = 203;
+    const mockBoardId = 152;
 
-  //   it('should throw NotFoundException in case the board Id does not match any board', async () => {
-  //     jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+    it('should throw NotFoundException in case the board Id does not match any board', async () => {
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
 
-  //     expect(
-  //       boardService.getBoard(mockUserId, mockBoardId),
-  //     ).rejects.toThrowError(NotFoundException);
-  //     expect(prismaService.board.findUnique).toBeCalledWith({
-  //       where: {
-  //         id: mockBoardId,
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: { select: { user: true, role: true } },
-  //       },
-  //     });
-  //   });
+      try {
+        await boardService.getBoard(mockUserId, mockBoardId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe('The board provided does not seem to exist');
+        expect(boardRepository.findBoardById).toBeCalledWith(
+          mockBoardId,
+          mockUserId,
+        );
+      }
+    });
 
-  //   it('should throw ForbiddenException if the user does not participate in the board', async () => {
-  //     const mockWrongBoard: BoardPrismaType = {
-  //       ...mockBoards,
-  //       ownerId: 67,
-  //       owner: {
-  //         ...mockOwner,
-  //         id: 67,
-  //       },
-  //     };
+    it('should return the board information', async () => {
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoards);
 
-  //     jest
-  //       .spyOn(prismaService.board, 'findUnique')
-  //       .mockResolvedValueOnce(mockWrongBoard);
+      const result = await boardService.getBoard(mockUserId, mockBoardId);
 
-  //     expect(
-  //       boardService.getBoard(mockUserId, mockBoardId),
-  //     ).rejects.toThrowError(ForbiddenException);
-  //     expect(prismaService.board.findUnique).toBeCalledWith({
-  //       where: {
-  //         id: mockBoardId,
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: { select: { user: true, role: true } },
-  //       },
-  //     });
-  //   });
+      const mockBoardsWithNoOwnerPassword = mockBoards;
+      delete mockBoardsWithNoOwnerPassword.owner.password;
 
-  //   it('should return the board information', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'findUnique')
-  //       .mockResolvedValueOnce(mockBoards);
-
-  //     const result = await boardService.getBoard(mockUserId, mockBoardId);
-
-  //     const mockBoardsWithNoOwnerPassword = mockBoards;
-  //     delete mockBoardsWithNoOwnerPassword.owner.password;
-
-  //     expect(result).toStrictEqual(mockBoardDto);
-  //     expect(prismaService.board.findUnique).toBeCalledWith({
-  //       where: {
-  //         id: mockBoardId,
-  //       },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: { select: { user: true, role: true } },
-  //       },
-  //     });
-  //   });
-  // });
+      expect(result).toStrictEqual(mockBoardDto);
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoardId,
+        mockUserId,
+      );
+    });
+  });
 
   // describe('createNewBoard', () => {
   //   const mockColumnsCreated: Array<ColumnsWithCards> = [
