@@ -23,6 +23,7 @@ import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 import { EmailService } from '../utils/config/email-config-service';
 import { BoardSummaryDto } from '../api/board/dto/board-summary.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
+import { UserDto } from '../api/user/dto/user.dto';
 
 describe('BoardService', () => {
   let boardService: BoardService;
@@ -411,6 +412,137 @@ describe('BoardService', () => {
         BoardRolesEnum.OBSERVER,
       );
       expect(boardRepository.findBoardById).toHaveBeenLastCalledWith(152, 203);
+    });
+  });
+
+  describe('updateMemberRole', () => {
+    it('should throw ForbiddenException when current user is not an admin', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByIds')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'updateBoardMembership')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await boardService.updateMemberRole(
+          203,
+          152,
+          14,
+          BoardRolesEnum.CONTRIBUTOR,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toBe('You cannot perform this change');
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          203,
+          152,
+        );
+        expect(boardRepository.findBoardMembershipByIds).not.toBeCalled();
+        expect(boardRepository.updateBoardMembership).not.toBeCalled();
+      }
+    });
+
+    it('should throw BadRequestException if the role provided is not valid', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByIds')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'updateBoardMembership')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await boardService.updateMemberRole(
+          203,
+          152,
+          14,
+          'WRONG_ROLE' as BoardRolesEnum,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toBe('the role provided is not a valid role');
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          203,
+          152,
+        );
+        expect(boardRepository.findBoardMembershipByIds).not.toBeCalled();
+        expect(boardRepository.updateBoardMembership).not.toBeCalled();
+      }
+    });
+
+    it('should throw BadRequestException if the member provided is not a participant', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByIds')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'updateBoardMembership')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await boardService.updateMemberRole(
+          203,
+          152,
+          14,
+          BoardRolesEnum.OBSERVER,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toBe(
+          'the member provided is not a participant in this board',
+        );
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          203,
+          152,
+        );
+        expect(boardRepository.findBoardMembershipByIds).toBeCalledWith(
+          152,
+          14,
+        );
+        expect(boardRepository.updateBoardMembership).not.toBeCalled();
+      }
+    });
+
+    it('should update member role and return the updated user', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByIds')
+        .mockResolvedValueOnce(mockBoardMembership[0]);
+      jest
+        .spyOn(boardRepository, 'updateBoardMembership')
+        .mockResolvedValueOnce({
+          ...mockBoardMembership[0],
+          role: BoardRolesEnum.ADMIN,
+        });
+
+      const result = await boardService.updateMemberRole(
+        203,
+        152,
+        14,
+        BoardRolesEnum.ADMIN,
+      );
+      expect(result).toStrictEqual(
+        UserDto.fromUser(mockOwner, BoardRolesEnum.ADMIN),
+      );
+      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        203,
+        152,
+      );
+      expect(boardRepository.findBoardMembershipByIds).toBeCalledWith(152, 14);
+      expect(boardRepository.updateBoardMembership).toBeCalledWith(
+        mockBoardMembership[0].id,
+        { role: BoardRolesEnum.ADMIN },
+      );
     });
   });
 });
