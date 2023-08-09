@@ -319,107 +319,98 @@ describe('BoardService', () => {
     });
   });
 
-  // describe('addMemberToBoard', () => {
-  //   const mockBoardsWithMembers: BoardPrismaType = {
-  //     ...mockBoards,
-  //     members: [
-  //       {
-  //         user: mockOwner,
-  //         role: 'OBSERVER',
-  //       },
-  //     ],
-  //   };
+  describe('addMemberToBoard', () => {
+    const mockBoardsWithMembers: BoardPrismaType = {
+      ...mockBoards,
+      members: [
+        {
+          user: mockOwner,
+          role: 'OBSERVER',
+        },
+      ],
+    };
 
-  //   it('should throw a NotFoundException when the user is not found', async () => {
-  //     jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
-  //     jest
-  //       .spyOn(prismaService.boardMembership, 'create')
-  //       .mockResolvedValueOnce(null);
-  //     jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+    it('should throw a NotFoundException when the user is not found', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
 
-  //     try {
-  //       await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
-  //     } catch (error) {
-  //       expect(prismaService.user.findUnique).toBeCalledWith({
-  //         where: { id: 203 },
-  //       });
-  //       expect(error).toBeInstanceOf(NotFoundException);
-  //       expect(error.message).toStrictEqual(
-  //         'the provided member does not seem to exist',
-  //       );
-  //       expect(prismaService.boardMembership.create).not.toBeCalled();
-  //       expect(prismaService.board.findUnique).not.toBeCalled();
-  //       expect(error).not.toBeInstanceOf(BadRequestException);
-  //     }
-  //   });
+      try {
+        await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
+      } catch (error) {
+        expect(prismaService.user.findUnique).toBeCalledWith({
+          where: { id: 203 },
+        });
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'the provided member does not seem to exist',
+        );
+        expect(prismaService.board.findUnique).not.toBeCalled();
+        expect(boardRepository.addUserToBoard).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+        expect(error).not.toBeInstanceOf(BadRequestException);
+      }
+    });
 
-  //   it('should throw a BadRequestException when the board is not found', async () => {
-  //     jest
-  //       .spyOn(prismaService.user, 'findUnique')
-  //       .mockResolvedValueOnce(mockOwner);
-  //     jest
-  //       .spyOn(prismaService.boardMembership, 'create')
-  //       .mockResolvedValueOnce(null);
-  //     jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+    it('should throw a BadRequestException when the board is not found', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValueOnce(mockOwner);
+      jest.spyOn(prismaService.board, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
 
-  //     try {
-  //       await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
-  //     } catch (error) {
-  //       expect(prismaService.user.findUnique).toBeCalledWith({
-  //         where: { id: 203 },
-  //       });
-  //       expect(prismaService.board.findUnique).toBeCalledWith({
-  //         where: { id: 152 },
-  //       });
-  //       expect(error).toBeInstanceOf(BadRequestException);
-  //       expect(error.message).toStrictEqual(
-  //         'the provided board does not seem to exist',
-  //       );
-  //       expect(prismaService.boardMembership.create).not.toBeCalled();
-  //       expect(error).not.toBeInstanceOf(NotFoundException);
-  //     }
-  //   });
+      try {
+        await boardService.addMemberToBoard(203, 152, BoardRolesEnum.OBSERVER);
+      } catch (error) {
+        expect(prismaService.user.findUnique).toBeCalledWith({
+          where: { id: 203 },
+        });
+        expect(prismaService.board.findUnique).toBeCalledWith({
+          where: { id: 152 },
+        });
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(boardRepository.addUserToBoard).not.toBeCalled();
+        expect(error.message).toStrictEqual(
+          'the provided board does not seem to exist',
+        );
+        expect(boardRepository.findBoardById).not.toBeCalled();
+        expect(error).not.toBeInstanceOf(NotFoundException);
+      }
+    });
 
-  //   it('should return the updated board with the new members', async () => {
-  //     jest
-  //       .spyOn(prismaService.user, 'findUnique')
-  //       .mockResolvedValueOnce(mockOwner);
-  //     jest
-  //       .spyOn(prismaService.board, 'findUnique')
-  //       .mockResolvedValueOnce(mockBoards);
-  //     jest
-  //       .spyOn(prismaService.boardMembership, 'create')
-  //       .mockResolvedValueOnce(null);
-  //     jest
-  //       .spyOn(prismaService.board, 'findUnique')
-  //       .mockResolvedValueOnce(mockBoardsWithMembers);
+    it('should return the updated board with the new members', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValueOnce(mockOwner);
+      jest
+        .spyOn(prismaService.board, 'findUnique')
+        .mockResolvedValueOnce(mockBoards);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoardsWithMembers);
 
-  //     const result = await boardService.addMemberToBoard(
-  //       203,
-  //       152,
-  //       BoardRolesEnum.OBSERVER,
-  //     );
+      const result = await boardService.addMemberToBoard(
+        203,
+        152,
+        BoardRolesEnum.OBSERVER,
+      );
 
-  //     expect(result).toBe(mockBoardsWithMembers);
-  //     expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-  //       where: { id: 203 },
-  //     });
-  //     expect(prismaService.board.findUnique).toHaveBeenCalledWith({
-  //       where: { id: 152 },
-  //     });
-  //     expect(prismaService.boardMembership.create).toBeCalledWith({
-  //       data: { boardId: 152, userId: 203, role: BoardRolesEnum.OBSERVER },
-  //     });
-  //     expect(prismaService.board.findUnique).toHaveBeenLastCalledWith({
-  //       where: { id: 152 },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: { select: { user: true, role: true } },
-  //       },
-  //     });
-  //   });
-  // });
+      expect(result).toBe(mockBoardsWithMembers);
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 203 },
+      });
+      expect(prismaService.board.findUnique).toHaveBeenCalledWith({
+        where: { id: 152 },
+      });
+      expect(boardRepository.addUserToBoard).toBeCalledWith(
+        203,
+        152,
+        BoardRolesEnum.OBSERVER,
+      );
+      expect(boardRepository.findBoardById).toHaveBeenLastCalledWith(152, 203);
+    });
+  });
 });
