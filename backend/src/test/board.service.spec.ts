@@ -184,45 +184,29 @@ describe('BoardService', () => {
     });
   });
 
-  // describe('getOwnedBoards', () => {
-  //   it('should return an empty array when the user has no boards', async () => {
-  //     jest.spyOn(prismaService.board, 'findMany').mockResolvedValueOnce(null);
+  describe('getOwnedBoards', () => {
+    it('should return an empty array when the user has no boards', async () => {
+      jest
+        .spyOn(boardRepository, 'findOwnedBoardsByUserId')
+        .mockResolvedValueOnce(null);
 
-  //     const result = await boardService.getOwnedBoards(203);
+      const result = await boardService.getOwnedBoards(203, 10);
 
-  //     expect(result).toStrictEqual([]);
-  //     expect(prismaService.board.findMany).toBeCalledWith({
-  //       where: { ownerId: 203 },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: { select: { user: true, role: true } },
-  //       },
-  //     });
-  //   });
+      expect(result).toStrictEqual([]);
+      expect(boardRepository.findOwnedBoardsByUserId).toBeCalledWith(203, 10);
+    });
 
-  //   it('should return an array of boards as Summary DTO', async () => {
-  //     jest
-  //       .spyOn(prismaService.board, 'findMany')
-  //       .mockResolvedValueOnce([mockBoards]);
+    it('should return an array of boards as Summary DTO', async () => {
+      jest
+        .spyOn(boardRepository, 'findOwnedBoardsByUserId')
+        .mockResolvedValueOnce([mockBoards]);
 
-  //     const result = await boardService.getOwnedBoards(203);
+      const result = await boardService.getOwnedBoards(203, 10);
 
-  //     expect(result).toStrictEqual([mockSummaryDto]);
-  //     expect(prismaService.board.findMany).toBeCalledWith({
-  //       where: { ownerId: 203 },
-  //       include: {
-  //         columns: {
-  //           include: { cards: true },
-  //         },
-  //         owner: true,
-  //         members: { select: { user: true, role: true } },
-  //       },
-  //     });
-  //   });
-  // });
+      expect(result).toStrictEqual([mockSummaryDto]);
+      expect(boardRepository.findOwnedBoardsByUserId).toBeCalledWith(203, 10);
+    });
+  });
 
   // describe('getBoard', () => {
   //   const mockUserId = 203;
