@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   BoardMembershipType,
@@ -100,7 +101,7 @@ describe('BoardServiceInvite', () => {
     email: 'user@test.mail',
     expireAt: new Date(2021, 4, 25),
     id: 3647,
-    isPending: true,
+    isPending: false,
   };
 
   const mockInviteData: InviteDataTypes = {
@@ -282,6 +283,69 @@ describe('BoardServiceInvite', () => {
         'token-encrypted-generated',
         './src/templates/board-invite.hbs',
       );
+    });
+  });
+
+  describe('acceptInvite', () => {
+    it('should throw UnauthorizedException if the user was not found', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
+      jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockInviteData);
+      jest
+        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.acceptInvite(
+          mockUserId,
+          'token-encrypted-generated',
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'You are not authorized to perform this action',
+        );
+        expect(prisma.user.findUnique).toBeCalledWith({
+          where: { id: mockUserId },
+        });
+        expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
+        expect(inviteRepository.checkIfInviteIsPending).not.toBeCalled();
+        expect(inviteRepository.updateInvite).not.toBeCalled();
+        expect(boardRepository.addUserToBoard).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if the email provided is not the same as the token', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce({
+        ...mockInviteData,
+        email: 'wrong.user@mail.com',
+      });
+      jest
+        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.acceptInvite(
+          mockUserId,
+          'token-encrypted-generated',
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'You are not authorized to perform this action',
+        );
+        expect(prisma.user.findUnique).toBeCalledWith({
+          where: { id: mockUserId },
+        });
+        expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
+        expect(inviteRepository.checkIfInviteIsPending).not.toBeCalled();
+        expect(inviteRepository.updateInvite).not.toBeCalled();
+        expect(boardRepository.addUserToBoard).not.toBeCalled();
+      }
     });
   });
 });
