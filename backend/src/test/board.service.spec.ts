@@ -28,6 +28,7 @@ import { UserDto } from '../api/user/dto/user.dto';
 import { DeleteBoardDTO } from '../api/board/dto/delete-board.dto';
 
 describe('BoardService', () => {
+  let userService: UserService;
   let boardService: BoardService;
   let emailService: EmailService;
   let prismaService: PrismaService;
@@ -150,6 +151,7 @@ describe('BoardService', () => {
       ],
     }).compile();
 
+    userService = moduleRef.get<UserService>(UserService);
     emailService = moduleRef.get<EmailService>(EmailService);
     boardService = moduleRef.get<BoardService>(BoardService);
     prismaService = moduleRef.get<PrismaService>(PrismaService);
@@ -544,6 +546,86 @@ describe('BoardService', () => {
       expect(boardRepository.updateBoardMembership).toBeCalledWith(
         mockBoardMembership[0].id,
         { role: BoardRolesEnum.ADMIN },
+      );
+    });
+  });
+
+  describe('initiateBoardDeletion', () => {
+    it('should throw ForbiddenException if user is not an admin', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(userService, 'getCurrentUser').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+      jest
+        .spyOn(twoFactorService, 'generateTwoFactorToken')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValueOnce(null);
+
+      try {
+        await boardService.initiateBoardDeletion(mockOwner.id, mockBoardDto.id);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          mockOwner.id,
+          mockBoards.id,
+        );
+        expect(userService.getCurrentUser).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+        expect(twoFactorService.generateTwoFactorToken).not.toBeCalled();
+        expect(emailService.sendEmail).not.toBeCalled();
+      }
+    });
+
+    it('should sendEmail and return the token', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockResolvedValueOnce(UserDto.fromUser(mockOwner));
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoards);
+
+      jest
+        .spyOn(twoFactorService, 'generateTwoFactorToken')
+        .mockResolvedValueOnce({
+          verificationCode: 'verification-code-test',
+          token: 'random-token',
+        });
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValueOnce(null);
+
+      const result = await boardService.initiateBoardDeletion(
+        mockOwner.id,
+        mockBoards.id,
+      );
+
+      expect(result).toStrictEqual('random-token');
+      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        mockOwner.id,
+        mockBoards.id,
+      );
+      expect(userService.getCurrentUser).toBeCalledWith(mockOwner.id);
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoards.id,
+        mockOwner.id,
+      );
+      expect(twoFactorService.generateTwoFactorToken).toHaveBeenCalledWith(
+        mockOwner.id,
+        mockOwner.email,
+        expect.any(Date),
+      );
+      expect(emailService.sendEmail).toBeCalledWith(
+        mockOwner.firstName,
+        mockBoards.name,
+        mockOwner.email,
+        'verification-code-test',
+        './src/templates/board-delete-2fa.hbs',
+        'New request to delete a board',
       );
     });
   });
