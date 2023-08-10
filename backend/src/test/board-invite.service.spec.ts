@@ -19,6 +19,8 @@ import { BoardRepository } from '../common/repositories/board.repository';
 import { InviteRepository } from '../common/repositories/invite.repository';
 import { EncryptConfigService } from '../utils/config/encryption-config-service';
 import { InviteDataTypes } from '../utils/@types/invite-data.types';
+import { BoardDto } from '../api/board/dto/board.dto';
+import { BoardRolesEnum } from '../utils/enums/board-roles.enum';
 
 describe('BoardServiceInvite', () => {
   let prisma: PrismaService;
@@ -346,6 +348,106 @@ describe('BoardServiceInvite', () => {
         expect(inviteRepository.updateInvite).not.toBeCalled();
         expect(boardRepository.addUserToBoard).not.toBeCalled();
       }
+    });
+
+    it('should throw ForbiddenException if the invitation has expired', async () => {
+      const mockExpiredInviteData: InviteDataTypes = {
+        ...mockInviteData,
+        expireAt: new Date(new Date().getTime() - 30 * 60 * 1000),
+      };
+
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockExpiredInviteData);
+      jest
+        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.acceptInvite(
+          mockUserId,
+          'token-encrypted-generated',
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual('the invitation has expired');
+        expect(prisma.user.findUnique).toBeCalledWith({
+          where: { id: mockUserId },
+        });
+        expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
+        expect(inviteRepository.checkIfInviteIsPending).not.toBeCalled();
+        expect(inviteRepository.updateInvite).not.toBeCalled();
+        expect(boardRepository.addUserToBoard).not.toBeCalled();
+      }
+    });
+
+    it('should throw BadRequestException if the invitation was already accepted', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockInviteData);
+      jest
+        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.acceptInvite(
+          mockUserId,
+          'token-encrypted-generated',
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toStrictEqual(
+          'the invitation was already accepted',
+        );
+        expect(prisma.user.findUnique).toBeCalledWith({
+          where: { id: mockUserId },
+        });
+        expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
+        expect(inviteRepository.checkIfInviteIsPending).toBeCalledWith(
+          mockInviteData.inviteId,
+        );
+        expect(inviteRepository.updateInvite).not.toBeCalled();
+        expect(boardRepository.addUserToBoard).not.toBeCalled();
+      }
+    });
+
+    it('should accept the invite and return the Board data', async () => {
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockInviteData);
+      jest
+        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(inviteRepository, 'updateInvite')
+        .mockResolvedValueOnce(mockInvite);
+      jest
+        .spyOn(boardRepository, 'addUserToBoard')
+        .mockResolvedValueOnce(mockMembership);
+
+      const result = await boardInviteService.acceptInvite(
+        mockUserId,
+        'token-encrypted-generated',
+      );
+
+      expect(result).toStrictEqual(new BoardDto(mockMembership.board));
+      expect(prisma.user.findUnique).toBeCalledWith({
+        where: { id: mockUserId },
+      });
+      expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
+      expect(inviteRepository.checkIfInviteIsPending).toBeCalledWith(
+        mockInviteData.inviteId,
+      );
+      expect(inviteRepository.updateInvite).toBeCalledWith(
+        mockInviteData.inviteId,
+        { isPending: false },
+      );
+      expect(boardRepository.addUserToBoard).toBeCalledWith(
+        mockUserId,
+        mockInvite.boardId,
+        BoardRolesEnum.CONTRIBUTOR,
+      );
     });
   });
 });
