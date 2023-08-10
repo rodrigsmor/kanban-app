@@ -1,0 +1,287 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  BoardMembershipType,
+  BoardPrismaType,
+  InvitePrismaType,
+} from '../utils/@types/payloads.type';
+import { User } from '@prisma/client';
+import { Test } from '@nestjs/testing';
+import { PrismaService } from '../prisma/prisma.service';
+import { BoardInviteDto } from '../api/board/dto/board-invite.dto';
+import { EmailService } from '../utils/config/email-config-service';
+import { BoardInviteService } from '../api/board/board-invite.service';
+import { BoardRepository } from '../common/repositories/board.repository';
+import { InviteRepository } from '../common/repositories/invite.repository';
+import { EncryptConfigService } from '../utils/config/encryption-config-service';
+import { InviteDataTypes } from '../utils/@types/invite-data.types';
+
+describe('BoardServiceInvite', () => {
+  let prisma: PrismaService;
+  let emailService: EmailService;
+  let crypt: EncryptConfigService;
+  let boardRepository: BoardRepository;
+  let inviteRepository: InviteRepository;
+  let boardInviteService: BoardInviteService;
+
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PrismaService,
+        EmailService,
+        EncryptConfigService,
+        BoardRepository,
+        InviteRepository,
+        BoardInviteService,
+      ],
+    }).compile();
+
+    prisma = moduleRef.get<PrismaService>(PrismaService);
+    emailService = moduleRef.get<EmailService>(EmailService);
+    crypt = moduleRef.get<EncryptConfigService>(EncryptConfigService);
+    boardRepository = moduleRef.get<BoardRepository>(BoardRepository);
+    inviteRepository = moduleRef.get<InviteRepository>(InviteRepository);
+    boardInviteService = moduleRef.get<BoardInviteService>(BoardInviteService);
+  });
+
+  const mockUserId = 2738;
+  const mockBoardId = 32091;
+
+  const mockBoardInviteDto: BoardInviteDto = {
+    boardId: mockBoardId,
+    email: 'test@user.mail',
+  };
+
+  const mockUser: User = {
+    email: 'test@user.mail',
+    firstName: 'Test first name',
+    lastName: 'Test last name',
+    id: mockUserId,
+    isAdmin: true,
+    password: 'a-very-secure-password',
+    profilePicture: '/path-to-password',
+  };
+
+  const mockBoard: BoardPrismaType = {
+    columns: [],
+    id: mockBoardId,
+    background: '/path-to-image',
+    createdAt: new Date(2021, 4, 24),
+    updateAt: new Date(2023, 8, 1),
+    description: 'a random board description',
+    isPinned: true,
+    members: [
+      {
+        role: 'CONTRIBUTOR',
+        user: mockUser,
+      },
+    ],
+    name: 'my board',
+    owner: mockUser,
+    ownerId: mockUserId,
+  };
+
+  const mockMembership: BoardMembershipType = {
+    id: 27393,
+    board: mockBoard,
+    boardId: mockBoardId,
+    role: 'CONTRIBUTOR',
+    user: mockUser,
+    userId: mockUserId,
+  };
+
+  const mockInvite: InvitePrismaType = {
+    board: mockBoard,
+    boardId: mockBoardId,
+    createdAt: new Date(2021, 4, 24),
+    email: 'user@test.mail',
+    expireAt: new Date(2021, 4, 25),
+    id: 3647,
+    isPending: true,
+  };
+
+  const mockInviteData: InviteDataTypes = {
+    email: 'test@user.mail',
+    expireAt: expect.any(Date),
+    inviteId: mockInvite.id,
+  };
+
+  describe('inviteUserToBoard', () => {
+    it('should throw ForbiddenException if the user is not an admin', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByMemberEmail')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(inviteRepository, 'createInvite').mockResolvedValueOnce(null);
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(crypt, 'encrypt').mockResolvedValueOnce(null);
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.inviteUserToBoard(
+          mockUserId,
+          mockBoardInviteDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'You are not allowed to add new members to this board',
+        );
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          mockUserId,
+          mockBoardInviteDto.boardId,
+        );
+        expect(boardRepository.findBoardById).not.toBeCalled();
+        expect(
+          boardRepository.findBoardMembershipByMemberEmail,
+        ).not.toBeCalled();
+        expect(inviteRepository.createInvite).not.toBeCalled();
+        expect(prisma.user.findUnique).not.toBeCalled();
+        expect(crypt.encrypt).not.toBeCalled();
+        expect(emailService.sendEmail).not.toBeCalled();
+      }
+    });
+
+    it('should throw NotFoundException if the board was not found', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByMemberEmail')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(inviteRepository, 'createInvite').mockResolvedValueOnce(null);
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(crypt, 'encrypt').mockResolvedValueOnce(null);
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.inviteUserToBoard(
+          mockUserId,
+          mockBoardInviteDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual('the board seems to not to exist');
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          mockUserId,
+          mockBoardInviteDto.boardId,
+        );
+        expect(boardRepository.findBoardById).toBeCalledWith(
+          mockBoardInviteDto.boardId,
+          mockUserId,
+        );
+        expect(
+          boardRepository.findBoardMembershipByMemberEmail,
+        ).not.toBeCalled();
+        expect(inviteRepository.createInvite).not.toBeCalled();
+        expect(prisma.user.findUnique).not.toBeCalled();
+        expect(crypt.encrypt).not.toBeCalled();
+        expect(emailService.sendEmail).not.toBeCalled();
+      }
+    });
+
+    it('should throw BadRequestException if the user is already a member', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoard);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByMemberEmail')
+        .mockResolvedValueOnce(mockMembership);
+      jest.spyOn(inviteRepository, 'createInvite').mockResolvedValueOnce(null);
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(crypt, 'encrypt').mockResolvedValueOnce(null);
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValueOnce(null);
+
+      try {
+        await boardInviteService.inviteUserToBoard(
+          mockUserId,
+          mockBoardInviteDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toStrictEqual('the user is already a member');
+        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+          mockUserId,
+          mockBoardInviteDto.boardId,
+        );
+        expect(boardRepository.findBoardById).toBeCalledWith(
+          mockBoardInviteDto.boardId,
+          mockUserId,
+        );
+        expect(boardRepository.findBoardMembershipByMemberEmail).toBeCalledWith(
+          mockBoardInviteDto.email,
+          mockBoardInviteDto.boardId,
+        );
+        expect(inviteRepository.createInvite).not.toBeCalled();
+        expect(prisma.user.findUnique).not.toBeCalled();
+        expect(crypt.encrypt).not.toBeCalled();
+        expect(emailService.sendEmail).not.toBeCalled();
+      }
+    });
+
+    it('should invite the user and return the token', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoard);
+      jest
+        .spyOn(boardRepository, 'findBoardMembershipByMemberEmail')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(inviteRepository, 'createInvite')
+        .mockResolvedValueOnce(mockInvite);
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce(mockUser);
+      jest
+        .spyOn(crypt, 'encrypt')
+        .mockResolvedValueOnce('token-encrypted-generated');
+      jest.spyOn(emailService, 'sendEmail').mockResolvedValueOnce(null);
+
+      const result = await boardInviteService.inviteUserToBoard(
+        mockUserId,
+        mockBoardInviteDto,
+      );
+
+      expect(result).toStrictEqual('token-encrypted-generated');
+      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        mockUserId,
+        mockBoardInviteDto.boardId,
+      );
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoardInviteDto.boardId,
+        mockUserId,
+      );
+      expect(boardRepository.findBoardMembershipByMemberEmail).toBeCalledWith(
+        mockBoardInviteDto.email,
+        mockBoardInviteDto.boardId,
+      );
+      expect(inviteRepository.createInvite).toBeCalledWith(
+        mockBoardInviteDto.email,
+        mockBoardInviteDto.boardId,
+        expect.any(Date),
+      );
+      expect(prisma.user.findUnique).toBeCalledWith({
+        where: { email: mockBoardInviteDto.email },
+      });
+      expect(crypt.encrypt).toBeCalledWith(mockInviteData);
+      expect(emailService.sendEmail).toBeCalledWith(
+        mockUser.firstName,
+        mockBoard.name,
+        mockBoardInviteDto.email,
+        'token-encrypted-generated',
+        './src/templates/board-invite.hbs',
+      );
+    });
+  });
+});
