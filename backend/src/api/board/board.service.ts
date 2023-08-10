@@ -72,9 +72,6 @@ export class BoardService {
 
     if (!board)
       throw new NotFoundException('The board provided does not seem to exist');
-    else if (board.ownerId !== userId) {
-      throw new ForbiddenException('You are not allowed to access this board');
-    }
 
     return new BoardDto(board);
   }
