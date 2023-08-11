@@ -6,6 +6,9 @@ import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import * as randomstring from 'randomstring';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtPayload } from '../utils/@types/jwt.payload';
+import { TwoFactor } from '@prisma/client';
+import { ForbiddenException } from '@nestjs/common';
 
 describe('TwoFactorService', () => {
   let prisma: PrismaService;
@@ -34,7 +37,25 @@ describe('TwoFactorService', () => {
     verificationCode: mockVerificationCode,
   };
 
+  const mockJwtPayload: JwtPayload = {
+    email: mockEmail,
+    exp: expireAt.getMilliseconds(),
+    iat: 0,
+    sub: mockUserId,
+  };
+
+  const mockTwoFactor: TwoFactor = {
+    createdAt: new Date(2023, 6, 12),
+    expireAt,
+    id: 2992,
+    token: mockToken,
+    type: 'auth',
+    userId: mockUserId,
+    verificationCode: mockVerificationCode,
+  };
+
   const jwtSecret = process.env.JWT_SECRET_KEY;
+  const mockJwtSecretKey = `${jwtSecret}-2Fa`;
 
   describe('generateTwoFactorToken', () => {
     it('should generate a verification token and verification code then return them', async () => {
@@ -57,7 +78,7 @@ describe('TwoFactorService', () => {
       });
       expect(jwtService.signAsync).toBeCalledWith(
         { email: mockEmail, sub: mockUserId },
-        { secret: `${jwtSecret}-2Fa`, expiresIn: 30 * 60 },
+        { secret: mockJwtSecretKey, expiresIn: 30 * 60 },
       );
       expect(prisma.twoFactor.create).toBeCalledWith({
         data: {
@@ -70,9 +91,31 @@ describe('TwoFactorService', () => {
     });
   });
 
-  describe('generateTwoFactorToken', () => {
-    it('', async () => {
+  describe('validateTwoFactorTokens', () => {
+    it('should throw ForbiddenException when the provided userId does not match the payload sub', async () => {
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValueOnce(mockJwtPayload);
+      jest.spyOn(prisma.twoFactor, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(prisma.twoFactor, 'delete').mockResolvedValueOnce(null);
 
+      try {
+        await twoFactorService.validateTwoFactorTokens(
+          mockUserId * 6,
+          mockToken,
+          mockVerificationCode,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'You do not have permission to perform this action',
+        );
+        expect(jwtService.verifyAsync).toBeCalledWith(mockToken, {
+          secret: mockJwtSecretKey,
+        });
+        expect(prisma.twoFactor.findUnique).not.toBeCalled();
+        expect(prisma.twoFactor.delete).not.toBeCalled();
+      }
     });
   });
 });
