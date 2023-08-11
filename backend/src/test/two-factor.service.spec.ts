@@ -8,7 +8,7 @@ import * as randomstring from 'randomstring';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtPayload } from '../utils/@types/jwt.payload';
 import { TwoFactor } from '@prisma/client';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 
 describe('TwoFactorService', () => {
   let prisma: PrismaService;
@@ -114,6 +114,62 @@ describe('TwoFactorService', () => {
           secret: mockJwtSecretKey,
         });
         expect(prisma.twoFactor.findUnique).not.toBeCalled();
+        expect(prisma.twoFactor.delete).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException when the provided code is incorrect', async () => {
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValueOnce(mockJwtPayload);
+      jest
+        .spyOn(prisma.twoFactor, 'findUnique')
+        .mockResolvedValueOnce(mockTwoFactor);
+      jest.spyOn(prisma.twoFactor, 'delete').mockResolvedValueOnce(null);
+
+      try {
+        await twoFactorService.validateTwoFactorTokens(
+          mockUserId,
+          mockToken,
+          `wrong-${mockVerificationCode}`,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual('the code provided is incorrect.');
+        expect(jwtService.verifyAsync).toBeCalledWith(mockToken, {
+          secret: mockJwtSecretKey,
+        });
+        expect(prisma.twoFactor.findUnique).toBeCalledWith({
+          where: { token: mockToken },
+        });
+        expect(prisma.twoFactor.delete).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException when the token was not found', async () => {
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValueOnce(mockJwtPayload);
+      jest.spyOn(prisma.twoFactor, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(prisma.twoFactor, 'delete').mockResolvedValueOnce(null);
+
+      try {
+        await twoFactorService.validateTwoFactorTokens(
+          mockUserId,
+          mockToken,
+          `wrong-${mockVerificationCode}`,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'it is not possible to authenticate',
+        );
+        expect(jwtService.verifyAsync).toBeCalledWith(mockToken, {
+          secret: mockJwtSecretKey,
+        });
+        expect(prisma.twoFactor.findUnique).toBeCalledWith({
+          where: { token: mockToken },
+        });
         expect(prisma.twoFactor.delete).not.toBeCalled();
       }
     });
