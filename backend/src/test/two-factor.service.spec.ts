@@ -157,7 +157,7 @@ describe('TwoFactorService', () => {
         await twoFactorService.validateTwoFactorTokens(
           mockUserId,
           mockToken,
-          `wrong-${mockVerificationCode}`,
+          mockVerificationCode,
         );
       } catch (error) {
         expect(error).toBeInstanceOf(UnauthorizedException);
@@ -172,6 +172,33 @@ describe('TwoFactorService', () => {
         });
         expect(prisma.twoFactor.delete).not.toBeCalled();
       }
+    });
+
+    it('should validate twoFactor, delete it and return the payload', async () => {
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockResolvedValueOnce(mockJwtPayload);
+      jest
+        .spyOn(prisma.twoFactor, 'findUnique')
+        .mockResolvedValueOnce(mockTwoFactor);
+      jest.spyOn(prisma.twoFactor, 'delete').mockResolvedValueOnce(null);
+
+      const payload = await twoFactorService.validateTwoFactorTokens(
+        mockUserId,
+        mockToken,
+        mockVerificationCode,
+      );
+
+      expect(payload).toStrictEqual(mockJwtPayload);
+      expect(jwtService.verifyAsync).toBeCalledWith(mockToken, {
+        secret: mockJwtSecretKey,
+      });
+      expect(prisma.twoFactor.findUnique).toBeCalledWith({
+        where: { token: mockToken },
+      });
+      expect(prisma.twoFactor.delete).toBeCalledWith({
+        where: { id: mockTwoFactor.id },
+      });
     });
   });
 });
