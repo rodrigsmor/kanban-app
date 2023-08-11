@@ -8,7 +8,7 @@ import * as randomstring from 'randomstring';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtPayload } from '../utils/@types/jwt.payload';
 
-type TwoFactorGenerationResponse = {
+export type TwoFactorGenerationResponse = {
   verificationCode: string;
   token: string;
 };
