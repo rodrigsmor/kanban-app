@@ -69,11 +69,11 @@ export class TwoFactorService {
       where: { token },
     });
 
-    if (twoFactor.verificationCode !== code)
-      throw new UnauthorizedException('the code provided is incorrect.');
-
     if (!twoFactor)
       throw new UnauthorizedException('it is not possible to authenticate');
+
+    if (twoFactor.verificationCode !== code)
+      throw new UnauthorizedException('the code provided is incorrect.');
 
     await this.prisma.twoFactor.delete({
       where: { id: twoFactor.id },
