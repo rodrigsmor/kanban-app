@@ -2,7 +2,7 @@ import { BoardMembershipType, BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardCreateDto } from '../../api/board/dto/board-create.dto';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 interface BoardMembershipUpdateData {
   role?: BoardRolesEnum;
@@ -145,5 +145,23 @@ export class BoardRepository {
     });
 
     return board && board.role === BoardRolesEnum.ADMIN;
+  }
+
+  async checkIfMemberHasPermissionToEdit(
+    userId: number,
+    boardId: number,
+  ): Promise<boolean> {
+    const membership = await this.prisma.boardMembership.findFirst({
+      where: { boardId, userId },
+    });
+
+    if (!membership)
+      throw new UnauthorizedException(
+        'the user provided is not a member of this board',
+      );
+
+    return [BoardRolesEnum.ADMIN, BoardRolesEnum.CONTRIBUTOR].includes(
+      membership?.role as BoardRolesEnum,
+    );
   }
 }
