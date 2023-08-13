@@ -88,7 +88,10 @@ describe('ColumnService', () => {
         expect(error.message).toStrictEqual(
           'the user provided is not a member of this board',
         );
-        expect(boardRepository).toBeCalledWith(mockUserId, mockBoardId);
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
         expect(prismaService.column.create).not.toBeCalled();
         expect(boardRepository.findBoardById).not.toBeCalled();
       }
@@ -112,7 +115,10 @@ describe('ColumnService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
-        expect(boardRepository).toBeCalledWith(mockUserId, mockBoardId);
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
         expect(prismaService.column.create).not.toBeCalled();
         expect(boardRepository.findBoardById).not.toBeCalled();
       }
@@ -140,7 +146,10 @@ describe('ColumnService', () => {
         expect(error.message).toStrictEqual(
           'it was not possible to save your new column',
         );
-        expect(boardRepository).toBeCalledWith(mockUserId, mockBoardId);
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
         expect(prismaService.column.create).toBeCalledWith({
           data: {
             boardId: mockBoardId,
@@ -168,7 +177,10 @@ describe('ColumnService', () => {
       );
 
       expect(result).toStrictEqual(mockColumnsUpdated);
-      expect(boardRepository).toBeCalledWith(mockUserId, mockBoardId);
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
       expect(prismaService.column.create).toBeCalledWith({
         data: {
           boardId: mockBoardId,
