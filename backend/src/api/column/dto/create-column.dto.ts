@@ -1,6 +1,9 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateColumnDto {
+  @IsString({
+    message: 'the title must be a string',
+  })
   title?: string;
 
   @IsNumber(undefined, {
