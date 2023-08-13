@@ -3,12 +3,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ColumnService } from '../api/column/column.service';
 import { BoardPrismaType, ColumnType } from '../utils/@types';
 import { CreateColumnDto } from '../api/column/dto/create-column.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { UserService } from '../api/user/user.service';
 
 describe('ColumnService', () => {
   let userService: UserService;
@@ -29,6 +29,7 @@ describe('ColumnService', () => {
 
   const mockUserId = 282192;
   const mockBoardId = 629738;
+  const mockColumnId = 81121392;
 
   const mockCreateColumnData: CreateColumnDto = {
     columnIndex: 2,
@@ -40,9 +41,19 @@ describe('ColumnService', () => {
     background: './path-to-background',
     columns: [
       {
-        id: 0,
+        id: mockColumnId,
         boardId: mockBoardId,
         columnIndex: 0,
+        cards: [],
+        cover: './path-to-cover',
+        title: 'Column of new tasks',
+        createdAt: new Date(2023, 8, 4),
+        updateAt: new Date(2024, 2, 12),
+      },
+      {
+        id: 972929101,
+        boardId: mockBoardId,
+        columnIndex: 1,
         cards: [],
         cover: './path-to-cover',
         title: 'Column of new tasks',
@@ -186,6 +197,134 @@ describe('ColumnService', () => {
           title: mockCreateColumnData.title,
           columnIndex: mockCreateColumnData.columnIndex,
         },
+      });
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoardId,
+        mockUserId,
+      );
+    });
+  });
+
+  describe('deleteColumn', () => {
+    it('should throw a UnauthorizedException if the user is not an admin', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(prismaService.column, 'delete').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.deleteColumn(mockUserId, mockBoardId, mockColumnId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.delete).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw a UnauthorizedException if is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
+        );
+      jest.spyOn(prismaService.column, 'delete').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.deleteColumn(mockUserId, mockBoardId, mockColumnId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'the user provided is not a member of this board',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.delete).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw a InternalServerException if an error occurs while deleting the board', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(prismaService.column, 'delete')
+        .mockRejectedValueOnce(new Error(''));
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.deleteColumn(mockUserId, mockBoardId, mockColumnId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'error while deleting board. Try again later',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.delete).toBeCalledWith({
+          where: { id: mockColumnId },
+        });
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw a InternalServerException if an error occurs while deleting the board', async () => {
+      const mockBoardUpdatedReturn: BoardPrismaType = {
+        ...mockBoardUpdated,
+        columns: [
+          {
+            id: 972929101,
+            boardId: mockBoardId,
+            columnIndex: 0,
+            cards: [],
+            cover: './path-to-cover',
+            title: 'Column of new tasks',
+            createdAt: new Date(2023, 8, 4),
+            updateAt: new Date(2024, 2, 12),
+          },
+        ],
+      };
+
+      const mockColumns: ColumnType[] = mockBoardUpdatedReturn.columns.map(
+        (column) => new ColumnType(column),
+      );
+
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest.spyOn(prismaService.column, 'delete').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoardUpdatedReturn);
+
+      const result = await columnService.deleteColumn(
+        mockUserId,
+        mockBoardId,
+        mockColumnId,
+      );
+
+      expect(result).toStrictEqual(mockColumns);
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(prismaService.column.delete).toBeCalledWith({
+        where: { id: mockColumnId },
       });
       expect(boardRepository.findBoardById).toBeCalledWith(
         mockBoardId,
