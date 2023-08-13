@@ -69,10 +69,9 @@ describe('ColumnService', () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockRejectedValueOnce(
-          () =>
-            new UnauthorizedException(
-              'the user provided is not a member of this board',
-            ),
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
         );
       jest.spyOn(prismaService.column, 'create').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
@@ -100,7 +99,7 @@ describe('ColumnService', () => {
     it('should throw UnauthorizedException if user has no permission to edit', async () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
-        .mockRejectedValueOnce(false);
+        .mockResolvedValueOnce(false);
       jest.spyOn(prismaService.column, 'create').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
 
@@ -127,7 +126,7 @@ describe('ColumnService', () => {
     it('should throw InternalServerError if there is an error creating the column', async () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
-        .mockRejectedValueOnce(false);
+        .mockResolvedValueOnce(true);
       jest
         .spyOn(prismaService.column, 'create')
         .mockRejectedValueOnce(
@@ -164,7 +163,7 @@ describe('ColumnService', () => {
     it('should creates a new column and return the updated columns', async () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
-        .mockRejectedValueOnce(false);
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'create').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardById')
