@@ -136,6 +136,17 @@ export class BoardRepository {
     });
   }
 
+  async checkIfColumnBelongsToBoard(
+    boardId: number,
+    columnId: number,
+  ): Promise<boolean> {
+    const column = await this.prisma.column.findFirst({
+      where: { boardId, id: columnId },
+    });
+
+    return column !== null;
+  }
+
   async checkIfBoardMemberIsAdmin(
     userId: number,
     boardId: number,
