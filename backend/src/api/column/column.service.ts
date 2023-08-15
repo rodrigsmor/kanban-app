@@ -102,6 +102,33 @@ export class ColumnService {
     boardId: number,
     columnId: number,
   ): Promise<ColumnType[]> {
-    return [];
+    const hasPermission =
+      await this.boardRepository.checkIfMemberHasPermissionToEdit(
+        userId,
+        boardId,
+      );
+
+    if (!hasPermission)
+      throw new UnauthorizedException(
+        'you do not have permission to perform this action',
+      );
+
+    try {
+      await this.prisma.column.delete({
+        where: { id: columnId },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'error while deleting board. Try again later',
+      );
+    }
+
+    const board = await this.boardRepository.findBoardById(boardId, userId);
+
+    const columns: ColumnType[] = board.columns.map(
+      (column) => new ColumnType(column),
+    );
+
+    return columns;
   }
 }
