@@ -213,7 +213,7 @@ describe('ColumnService', () => {
   });
 
   describe('updateColumn', () => {
-    it('should throw UnauthorizedException if user is not an admin', async () => {
+    it('should throw UnauthorizedException if member has no permission to edit', async () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(false);
@@ -260,7 +260,7 @@ describe('ColumnService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(UnauthorizedException);
         expect(error.message).toStrictEqual(
-          'you do not have permission to perform this action',
+          'the user provided is not a member of this board',
         );
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
@@ -289,7 +289,7 @@ describe('ColumnService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(InternalServerErrorException);
         expect(error.message).toStrictEqual(
-          'you do not have permission to perform this action',
+          'it was not possible to update your column',
         );
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
@@ -450,6 +450,7 @@ describe('ColumnService', () => {
       expect(prismaService.column.update).toBeCalledWith({
         where: { id: mockEditColumnDto.columnId },
         data: {
+          title: mockEditColumnDto.title,
           columnIndex: mockEditColumnDto.columnIndex,
         },
       });
