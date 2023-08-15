@@ -175,4 +175,20 @@ export class BoardRepository {
       membership?.role as BoardRolesEnum,
     );
   }
+
+  async checkIfColumnIndexIsRepeated(
+    boardId: number,
+    columnIndex: number,
+  ): Promise<boolean> {
+    const column = await this.prisma.board.findFirst({
+      where: {
+        id: boardId,
+        columns: {
+          some: { columnIndex },
+        },
+      },
+    });
+
+    return column !== null;
+  }
 }
