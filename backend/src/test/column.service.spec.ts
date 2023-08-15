@@ -9,6 +9,7 @@ import { ColumnService } from '../api/column/column.service';
 import { BoardPrismaType, ColumnType } from '../utils/@types';
 import { CreateColumnDto } from '../api/column/dto/create-column.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
+import { EditColumnDto } from '../api/column/dto/edit-column.dto';
 
 describe('ColumnService', () => {
   let userService: UserService;
@@ -74,6 +75,12 @@ describe('ColumnService', () => {
   const mockColumnsUpdated: ColumnType[] = mockBoardUpdated.columns.map(
     (column) => new ColumnType(column),
   );
+
+  const mockEditColumnDto: EditColumnDto = {
+    columnId: mockColumnId,
+    title: 'New title',
+    columnIndex: 2,
+  };
 
   describe('createNewColumn', () => {
     it('should throw UnauthorizedException if the user is not a board member', async () => {
@@ -205,8 +212,256 @@ describe('ColumnService', () => {
     });
   });
 
+  describe('updateColumn', () => {
+    it('should throw UnauthorizedException if user is not an admin', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.updateColumn(
+          mockUserId,
+          mockBoardId,
+          mockEditColumnDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.update).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
+        );
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.updateColumn(
+          mockUserId,
+          mockBoardId,
+          mockEditColumnDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.update).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw InternalServerError if an error occurs while updating the column', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(prismaService.column, 'update')
+        .mockRejectedValueOnce(new Error(''));
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.updateColumn(
+          mockUserId,
+          mockBoardId,
+          mockEditColumnDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.update).toBeCalledWith({
+          where: { id: mockEditColumnDto.columnId },
+          data: {
+            title: mockEditColumnDto.title,
+            columnIndex: mockEditColumnDto.columnIndex,
+          },
+        });
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should only update the column title if it is the only field provided', async () => {
+      const mockEditTitleColumnDto: EditColumnDto = {
+        ...mockEditColumnDto,
+        columnIndex: undefined,
+      };
+
+      const mockBoardColumnTitleUpdated: BoardPrismaType = {
+        ...mockBoardUpdated,
+        columns: [
+          {
+            ...mockBoardUpdated.columns[0],
+            title: mockEditTitleColumnDto.title,
+          },
+          mockBoardUpdated.columns[1],
+        ],
+      };
+
+      const mockColumnsTitleUpdated: ColumnType[] =
+        mockBoardColumnTitleUpdated.columns.map(
+          (column) => new ColumnType(column),
+        );
+
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoardColumnTitleUpdated);
+
+      const result = await columnService.updateColumn(
+        mockUserId,
+        mockBoardId,
+        mockEditTitleColumnDto,
+      );
+
+      expect(result).toStrictEqual(mockColumnsTitleUpdated);
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(prismaService.column.update).toBeCalledWith({
+        where: { id: mockEditColumnDto.columnId },
+        data: {
+          title: mockEditColumnDto.title,
+        },
+      });
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoardId,
+        mockUserId,
+      );
+    });
+
+    it('should only update the column index if it is the only field provided', async () => {
+      const mockEditColumnIndexDto: EditColumnDto = {
+        ...mockEditColumnDto,
+        title: undefined,
+      };
+
+      const mockBoardColumnIndexUpdated: BoardPrismaType = {
+        ...mockBoardUpdated,
+        columns: [
+          mockBoardUpdated.columns[1],
+          {
+            ...mockBoardUpdated.columns[0],
+            columnIndex: mockEditColumnIndexDto.columnIndex,
+          },
+        ],
+      };
+
+      const mockColumnIndexUpdated: ColumnType[] =
+        mockBoardColumnIndexUpdated.columns.map(
+          (column) => new ColumnType(column),
+        );
+
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoardColumnIndexUpdated);
+
+      const result = await columnService.updateColumn(
+        mockUserId,
+        mockBoardId,
+        mockEditColumnIndexDto,
+      );
+
+      expect(result).toStrictEqual(mockColumnIndexUpdated);
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(prismaService.column.update).toBeCalledWith({
+        where: { id: mockEditColumnDto.columnId },
+        data: {
+          columnIndex: mockEditColumnDto.columnIndex,
+        },
+      });
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoardId,
+        mockUserId,
+      );
+    });
+
+    it('should update column if all data is provided', async () => {
+      const mockBoardColumnsUpdated: BoardPrismaType = {
+        ...mockBoardUpdated,
+        columns: [
+          mockBoardUpdated.columns[1],
+          {
+            ...mockBoardUpdated.columns[0],
+            columnIndex: mockEditColumnDto.columnIndex,
+            title: mockEditColumnDto.title,
+          },
+        ],
+      };
+
+      const mockColumnsUpdated: ColumnType[] =
+        mockBoardColumnsUpdated.columns.map((column) => new ColumnType(column));
+
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardById')
+        .mockResolvedValueOnce(mockBoardColumnsUpdated);
+
+      const result = await columnService.updateColumn(
+        mockUserId,
+        mockBoardId,
+        mockEditColumnDto,
+      );
+
+      expect(result).toStrictEqual(mockColumnsUpdated);
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(prismaService.column.update).toBeCalledWith({
+        where: { id: mockEditColumnDto.columnId },
+        data: {
+          columnIndex: mockEditColumnDto.columnIndex,
+        },
+      });
+      expect(boardRepository.findBoardById).toBeCalledWith(
+        mockBoardId,
+        mockUserId,
+      );
+    });
+  });
+
   describe('deleteColumn', () => {
-    it('should throw a UnauthorizedException if the user is not an admin', async () => {
+    it('should throw a UnauthorizedException if the user is not an admin or contributor', async () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(false);
