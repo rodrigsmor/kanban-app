@@ -1,7 +1,7 @@
-import { UserDto } from '../../user/dto/user.dto';
-import { ColumnType } from '../../../utils/@types/column.type';
-import { BoardPrismaType } from '../../../utils/@types/payloads.type';
+import { UserDto } from '../../user/dto';
 import { BoardRolesEnum } from 'src/utils/enums';
+import { ColumnType } from '../../../utils/@types';
+import { BoardPrismaType } from '../../../utils/@types/payloads.type';
 
 export class BoardDto {
   id: number;
