@@ -218,6 +218,9 @@ describe('ColumnService', () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
 
@@ -232,6 +235,7 @@ describe('ColumnService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
+        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
@@ -249,6 +253,9 @@ describe('ColumnService', () => {
             'the user provided is not a member of this board',
           ),
         );
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
 
@@ -260,8 +267,43 @@ describe('ColumnService', () => {
         );
       } catch (error) {
         expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
         expect(error.message).toStrictEqual(
           'the user provided is not a member of this board',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.update).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw NotFoundException if column does not belong to board', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.updateColumn(
+          mockUserId,
+          mockBoardId,
+          mockEditColumnDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+          mockBoardId,
+          mockColumnId,
+        );
+        expect(error.message).toStrictEqual(
+          'this column does not seem to exist',
         );
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
@@ -275,6 +317,9 @@ describe('ColumnService', () => {
     it('should throw InternalServerError if an error occurs while updating the column', async () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(prismaService.column, 'update')
@@ -291,6 +336,10 @@ describe('ColumnService', () => {
         expect(error).toBeInstanceOf(InternalServerErrorException);
         expect(error.message).toStrictEqual(
           'it was not possible to update your column',
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+          mockBoardId,
+          mockColumnId,
         );
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
@@ -332,6 +381,9 @@ describe('ColumnService', () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardById')
@@ -344,6 +396,10 @@ describe('ColumnService', () => {
       );
 
       expect(result).toStrictEqual(mockColumnsTitleUpdated);
+      expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        mockBoardId,
+        mockColumnId,
+      );
       expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
@@ -385,6 +441,9 @@ describe('ColumnService', () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardById')
@@ -397,6 +456,10 @@ describe('ColumnService', () => {
       );
 
       expect(result).toStrictEqual(mockColumnIndexUpdated);
+      expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        mockBoardId,
+        mockColumnId,
+      );
       expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
@@ -432,6 +495,9 @@ describe('ColumnService', () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardById')
@@ -444,6 +510,10 @@ describe('ColumnService', () => {
       );
 
       expect(result).toStrictEqual(mockColumnsUpdated);
+      expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        mockBoardId,
+        mockColumnId,
+      );
       expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
