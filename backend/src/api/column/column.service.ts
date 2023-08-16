@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -32,6 +33,17 @@ export class ColumnService {
     if (!hasPermission)
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
+      );
+
+    const isColumnIndexRepeated =
+      await this.boardRepository.checkIfColumnIndexIsRepeated(
+        boardId,
+        columnData.columnIndex,
+      );
+
+    if (isColumnIndexRepeated)
+      throw new BadRequestException(
+        'it is not possible to set this index for this column. It is already occupied.'
       );
 
     try {
