@@ -276,6 +276,9 @@ describe('ColumnService', () => {
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(false);
       jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
+      jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
@@ -293,6 +296,7 @@ describe('ColumnService', () => {
           'you do not have permission to perform this action',
         );
         expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
+        expect(boardRepository.checkIfColumnIndexIsRepeated).not.toBeCalled();
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
@@ -311,6 +315,9 @@ describe('ColumnService', () => {
           ),
         );
       jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
+      jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
@@ -325,9 +332,48 @@ describe('ColumnService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(UnauthorizedException);
         expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
+        expect(boardRepository.checkIfColumnIndexIsRepeated).not.toBeCalled();
         expect(error.message).toStrictEqual(
           'the user provided is not a member of this board',
         );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.column.update).not.toBeCalled();
+        expect(boardRepository.findBoardById).not.toBeCalled();
+      }
+    });
+
+    it('should throw BadRequestException if column index is repeated', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
+      jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
+
+      try {
+        await columnService.updateColumn(
+          mockUserId,
+          mockBoardId,
+          mockEditColumnDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toStrictEqual(
+          'it is not possible to set this index for this column. It is already occupied.',
+        );
+        expect(boardRepository.checkIfColumnIndexIsRepeated).toBeCalledWith(
+          mockBoardId,
+          mockEditColumnDto.columnIndex,
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
@@ -342,6 +388,9 @@ describe('ColumnService', () => {
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
       jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
+      jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(false);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
@@ -355,12 +404,16 @@ describe('ColumnService', () => {
         );
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'this column does not seem to exist',
+        );
         expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
           mockBoardId,
           mockColumnId,
         );
-        expect(error.message).toStrictEqual(
-          'this column does not seem to exist',
+        expect(boardRepository.checkIfColumnIndexIsRepeated).toBeCalledWith(
+          mockBoardId,
+          mockEditColumnDto.columnIndex,
         );
         expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
           mockUserId,
@@ -375,6 +428,9 @@ describe('ColumnService', () => {
       jest
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
       jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
@@ -393,6 +449,10 @@ describe('ColumnService', () => {
         expect(error).toBeInstanceOf(InternalServerErrorException);
         expect(error.message).toStrictEqual(
           'it was not possible to update your column',
+        );
+        expect(boardRepository.checkIfColumnIndexIsRepeated).toBeCalledWith(
+          mockBoardId,
+          mockEditColumnDto.columnIndex,
         );
         expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
           mockBoardId,
@@ -439,6 +499,9 @@ describe('ColumnService', () => {
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
       jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
+      jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
@@ -457,6 +520,7 @@ describe('ColumnService', () => {
         mockBoardId,
         mockColumnId,
       );
+      expect(boardRepository.checkIfColumnIndexIsRepeated).not.toBeCalled();
       expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
@@ -499,6 +563,9 @@ describe('ColumnService', () => {
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
       jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
+      jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
@@ -520,6 +587,10 @@ describe('ColumnService', () => {
       expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
+      );
+      expect(boardRepository.checkIfColumnIndexIsRepeated).toBeCalledWith(
+        mockBoardId,
+        mockEditColumnIndexDto.columnIndex,
       );
       expect(prismaService.column.update).toBeCalledWith({
         where: { id: mockEditColumnDto.columnId },
@@ -553,6 +624,9 @@ describe('ColumnService', () => {
         .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
         .mockResolvedValueOnce(true);
       jest
+        .spyOn(boardRepository, 'checkIfColumnIndexIsRepeated')
+        .mockResolvedValueOnce(false);
+      jest
         .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
         .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.column, 'update').mockResolvedValueOnce(null);
@@ -570,6 +644,10 @@ describe('ColumnService', () => {
       expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
         mockBoardId,
         mockColumnId,
+      );
+      expect(boardRepository.checkIfColumnIndexIsRepeated).toBeCalledWith(
+        mockBoardId,
+        mockEditColumnDto.columnIndex,
       );
       expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
         mockUserId,
