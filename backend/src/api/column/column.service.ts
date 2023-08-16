@@ -43,7 +43,7 @@ export class ColumnService {
 
     if (isColumnIndexRepeated)
       throw new BadRequestException(
-        'it is not possible to set this index for this column. It is already occupied.'
+        'it is not possible to set this index for this column. It is already occupied.',
       );
 
     try {
@@ -84,6 +84,19 @@ export class ColumnService {
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
       );
+
+    if (columnData?.columnIndex) {
+      const isColumnIndexRepeated =
+        await this.boardRepository.checkIfColumnIndexIsRepeated(
+          boardId,
+          columnData.columnIndex,
+        );
+
+      if (isColumnIndexRepeated)
+        throw new BadRequestException(
+          'it is not possible to set this index for this column. It is already occupied.',
+        );
+    }
 
     const belongsToColumn =
       await this.boardRepository.checkIfColumnBelongsToBoard(
