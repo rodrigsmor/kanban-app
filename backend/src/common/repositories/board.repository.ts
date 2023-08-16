@@ -1,8 +1,8 @@
-import { BoardMembershipType, BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BoardCreateDto } from '../../api/board/dto/board-create.dto';
-import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
+import { BoardCreateDto } from '../../api/board/dto/board-create.dto';
+import { BoardMembershipType, BoardPrismaType } from '../../utils/@types';
 
 interface BoardMembershipUpdateData {
   role?: BoardRolesEnum;
@@ -41,7 +41,16 @@ export class BoardRepository {
       where: {
         id: boardId,
       },
-      include: boardIncludeTemplate,
+      include: {
+        columns: {
+          orderBy: {
+            columnIndex: 'asc',
+          },
+          include: { cards: true },
+        },
+        owner: true,
+        members: { select: { user: true, role: true } },
+      },
     });
 
     const isMemberOfBoard =
@@ -90,7 +99,16 @@ export class BoardRepository {
           ],
         },
       },
-      include: boardIncludeTemplate,
+      include: {
+        columns: {
+          orderBy: {
+            columnIndex: 'asc',
+          },
+          include: { cards: true },
+        },
+        owner: true,
+        members: { select: { user: true, role: true } },
+      },
     });
   }
 
