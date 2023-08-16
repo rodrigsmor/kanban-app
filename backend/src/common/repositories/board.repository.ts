@@ -1,8 +1,8 @@
-import { BoardMembershipType, BoardPrismaType } from '../../utils/@types';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BoardCreateDto } from '../../api/board/dto/board-create.dto';
-import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
+import { BoardCreateDto } from '../../api/board/dto/board-create.dto';
+import { BoardMembershipType, BoardPrismaType } from '../../utils/@types';
 
 interface BoardMembershipUpdateData {
   role?: BoardRolesEnum;
@@ -41,7 +41,16 @@ export class BoardRepository {
       where: {
         id: boardId,
       },
-      include: boardIncludeTemplate,
+      include: {
+        columns: {
+          orderBy: {
+            columnIndex: 'asc',
+          },
+          include: { cards: true },
+        },
+        owner: true,
+        members: { select: { user: true, role: true } },
+      },
     });
 
     const isMemberOfBoard =
@@ -90,7 +99,16 @@ export class BoardRepository {
           ],
         },
       },
-      include: boardIncludeTemplate,
+      include: {
+        columns: {
+          orderBy: {
+            columnIndex: 'asc',
+          },
+          include: { cards: true },
+        },
+        owner: true,
+        members: { select: { user: true, role: true } },
+      },
     });
   }
 
@@ -136,6 +154,17 @@ export class BoardRepository {
     });
   }
 
+  async checkIfColumnBelongsToBoard(
+    boardId: number,
+    columnId: number,
+  ): Promise<boolean> {
+    const column = await this.prisma.column.findFirst({
+      where: { boardId, id: columnId },
+    });
+
+    return column !== null;
+  }
+
   async checkIfBoardMemberIsAdmin(
     userId: number,
     boardId: number,
@@ -163,5 +192,21 @@ export class BoardRepository {
     return [BoardRolesEnum.ADMIN, BoardRolesEnum.CONTRIBUTOR].includes(
       membership?.role as BoardRolesEnum,
     );
+  }
+
+  async checkIfColumnIndexIsRepeated(
+    boardId: number,
+    columnIndex: number,
+  ): Promise<boolean> {
+    const column = await this.prisma.board.findFirst({
+      where: {
+        id: boardId,
+        columns: {
+          some: { columnIndex },
+        },
+      },
+    });
+
+    return column !== null;
   }
 }

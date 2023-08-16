@@ -14,7 +14,7 @@ import { ColumnType } from 'src/utils/@types';
 import { ColumnService } from './column.service';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
 
-@Controller('column')
+@Controller('/api/column')
 export class ColumnController {
   constructor(private readonly columnService: ColumnService) {}
 

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class EditColumnDto {
   @IsNotEmpty({
@@ -6,11 +6,13 @@ export class EditColumnDto {
   })
   columnId: number;
 
+  @IsOptional()
   @IsString({
     message: 'the title must be a string',
   })
   title?: string;
 
+  @IsOptional()
   @IsNumber(undefined, {
     message: 'the column index should be a number',
   })

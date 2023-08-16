@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ColumnType } from '../../utils/@types';
@@ -31,6 +33,17 @@ export class ColumnService {
     if (!hasPermission)
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
+      );
+
+    const isColumnIndexRepeated =
+      await this.boardRepository.checkIfColumnIndexIsRepeated(
+        boardId,
+        columnData.columnIndex,
+      );
+
+    if (isColumnIndexRepeated)
+      throw new BadRequestException(
+        'it is not possible to set this index for this column. It is already occupied.',
       );
 
     try {
@@ -72,6 +85,28 @@ export class ColumnService {
         'you do not have permission to perform this action',
       );
 
+    if (columnData?.columnIndex) {
+      const isColumnIndexRepeated =
+        await this.boardRepository.checkIfColumnIndexIsRepeated(
+          boardId,
+          columnData.columnIndex,
+        );
+
+      if (isColumnIndexRepeated)
+        throw new BadRequestException(
+          'it is not possible to set this index for this column. It is already occupied.',
+        );
+    }
+
+    const belongsToColumn =
+      await this.boardRepository.checkIfColumnBelongsToBoard(
+        boardId,
+        columnData.columnId,
+      );
+
+    if (!belongsToColumn)
+      throw new NotFoundException('this column does not seem to exist');
+
     try {
       await this.prisma.column.update({
         where: { id: columnData.columnId },
@@ -112,6 +147,12 @@ export class ColumnService {
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
       );
+
+    const belongsToColumn =
+      await this.boardRepository.checkIfColumnBelongsToBoard(boardId, columnId);
+
+    if (!belongsToColumn)
+      throw new NotFoundException('this column does not seem to exist');
 
     try {
       await this.prisma.column.delete({
