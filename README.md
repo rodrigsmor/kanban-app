@@ -64,6 +64,46 @@ Yahoo! You have finished configuring the application and should now be able to r
 
 ## 🚀 How to run?
 
+With everything set up correctly, we can now run the application. First of all, you need to build the container images with docker compose. To do this, run the following command in your terminal (remember to run it in the root directory of the project):
+
+````
+docker-compose build
+````
+
+Once the image has been built, simply generate the migrations to the database using `prisma`, so that you can keep the data and have a more dynamic experience with the application. Just run the command below:
+
+````
+docker-compose run backend npx prisma migrate dev
+````
+
+That’s it! Now you can fully enjoy the application. Just run it on your own device.
+
+---
+
+### 🏃🏽‍♂️ Runnning the application
+
+Now that all the settings have been made, you can proceed with running the application. To do this, simply run the following command:
+
+````
+docker-compose up
+````
+
+In case the migrations and other settings have been made, you can build and run the container image by executing the following command:
+
+`````
+docker-compose up --build
+`````
+
+---
+
+### ✅ Running tests
+
+If you want to run tests, just run the following commands:
+
+````
+# run backend tests
+docker-compose run backend npm run test
+````
 
 ## 🌎 Support links and tutorials
 
