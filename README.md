@@ -53,3 +53,13 @@ MAILER_HOST=<the SMTP host based on your e-mail address>
 Yahoo! You have finished configuring the application and should now be able to run it on your own device.
 
 ## 🚀 How to run?
+
+
+## 🌎 Support links and tutorials
+
+- 🔗 Nest.js documentation: https://docs.nestjs.com/
+- 🔗 Next.js documentation: https://nextjs.org/docs
+- 🔗 Docker documentation: https://docs.docker.com/
+- 🔗 SMTP nodemailer: https://nodemailer.com/smtp/
+- 🔗 PostgreSQL docker host: https://hub.docker.com/_/postgres
+- 🔗 Jest documentation: https://jestjs.io/docs/getting-started
