@@ -11,6 +11,16 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
 
 ---
 
+## 📥 Installation
+
+To clone the application on your own device, simply run the following command in the terminal:
+
+````
+git clone https://github.com/rodrigsmor/kanban-app.git
+`````
+
+Make sure you have the git CLI installed correctly on your device. If you don't have git installed, you can find out how to do this by clicking [here](#🌎-support-links-and-tutorials).
+
 ## ⚙️ Settings
 
 First of all, in order to run the application, you need to create an `.env` file in the root directory, in which you will define the application's environment variables.
@@ -63,3 +73,4 @@ Yahoo! You have finished configuring the application and should now be able to r
 - 🔗 SMTP nodemailer: https://nodemailer.com/smtp/
 - 🔗 PostgreSQL docker host: https://hub.docker.com/_/postgres
 - 🔗 Jest documentation: https://jestjs.io/docs/getting-started
+- 🔗 GIT installing tutorial: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
