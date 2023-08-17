@@ -8,15 +8,15 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
 
 ## 📚 Table of contents
 
-- [📒 Introduction](#-introduction)
-- [📚 Table of contents](#-table-of-contents)
-- [⚒️ Technologies](#️-technologies)
-- [📥 Installation](#-installation)
-- [⚙️ Settings](#️-settings)
-- [🚀 How to run?](#-how-to-run)
-  - [🏃🏽‍♂️ Runnning the application](#️-runnning-the-application)
-  - [✅ Running tests](#-running-tests)
-- [🌎 Support links and tutorials](#-support-links-and-tutorials)
+- [📒 Introduction](#📒-introduction)
+- [📚 Table of contents](#📚-table-of-contents)
+- [⚒️ Technologies](#️⚒️-technologies)
+- [📥 Installation](#📥-installation)
+- [⚙️ Settings](#️⚙️-settings)
+- [🚀 How to run?](#🚀-how-to-run)
+  - [🏃🏽‍♂️ Runnning the application](#️🏃🏽‍♂️-runnning-the-application)
+  - [✅ Running tests](#✅-running-tests)
+- [🌎 Support links and tutorials](#🌎-support-links-and-tutorials)
 
 ---
 
