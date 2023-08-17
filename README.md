@@ -8,6 +8,15 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
 
 ## 📚 Table of contents
 
+- [📒 Introduction](#-introduction)
+- [📚 Table of contents](#-table-of-contents)
+- [⚒️ Technologies](#️-technologies)
+- [📥 Installation](#-installation)
+- [⚙️ Settings](#️-settings)
+- [🚀 How to run?](#-how-to-run)
+  - [🏃🏽‍♂️ Runnning the application](#️-runnning-the-application)
+  - [✅ Running tests](#-running-tests)
+- [🌎 Support links and tutorials](#-support-links-and-tutorials)
 
 ---
 
@@ -25,6 +34,7 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
   <img src="https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white" alt="Jest.js" />
   <img src="https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white" alt="Prisma" />
   <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens" alt="JWT Authentication" />
+  <img src="https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white" alt="Swagger" />
 </div>
 
 ## 📥 Installation
@@ -130,3 +140,5 @@ docker-compose run backend npm run test
 - 🔗 PostgreSQL docker host: https://hub.docker.com/_/postgres
 - 🔗 Jest documentation: https://jestjs.io/docs/getting-started
 - 🔗 GIT installing tutorial: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+
+[def]: #📒-introduction
