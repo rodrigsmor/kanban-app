@@ -25,6 +25,7 @@
     "@nestjs/jwt": "^10.1.0",
     "@nestjs/passport": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^7.1.8",
     "@prisma/client": "^5.0.0",
     "@types/handlebars": "^4.1.0",
     "@types/nodemailer": "^6.4.9",
