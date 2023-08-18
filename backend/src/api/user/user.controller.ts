@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -63,8 +65,6 @@ export class UserController {
 
   @Patch('/profilePicture')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('profilePicture'))
-  @ApiBearerAuth()
   @ApiOperation({
     description: 'This endpoint will update the user profile picture',
   })
@@ -74,6 +74,21 @@ export class UserController {
     description:
       'It will return user’s data updated including the new profile picture',
   })
+  @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        profilePicture: {
+          type: 'string',
+          format: 'binary',
+          description: 'The new profile picture of user',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('profilePicture'))
   async updateProfilePicture(
     @UserId() userId: number,
     @UploadedFile() profilePicture: Express.Multer.File,
