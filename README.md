@@ -6,15 +6,16 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
 
 ---
 
-## 📚 Table of contents
+## 📜 Table of contents
 
 - [📒 Introduction](#📒-introduction)
-- [📚 Table of contents](#📚-table-of-contents)
+- [📜 Table of contents](#📜-table-of-contents)
 - [⚒️ Technologies](#️⚒️-technologies)
 - [📥 Installation](#📥-installation)
 - [⚙️ Settings](#️⚙️-settings)
 - [🚀 How to run?](#🚀-how-to-run)
   - [🏃🏽‍♂️ Runnning the application](#️🏃🏽‍♂️-runnning-the-application)
+  - [📚 Documentation](#📚-documentation)
   - [✅ Running tests](#✅-running-tests)
 - [🌎 Support links and tutorials](#🌎-support-links-and-tutorials)
 
@@ -119,6 +120,16 @@ In case the migrations and other settings have been made, you can build and run 
 `````
 docker-compose up --build
 `````
+
+---
+
+### 📚 Documentation
+
+In case you want to access the application's documentation, follow the steps above and, once the application is running, simply access the links below:
+
+- API DOCUMENTATION: `http://localhost:3000/docs`
+
+That's it! You now have access to an arsenal of information about how the application works and its routes.
 
 ---
 
