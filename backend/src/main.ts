@@ -18,6 +18,12 @@ async function bootstrap() {
       'Welcome to the Ruma documentation! Ruma is a project and task management web application based on the agile Kanban methodology. In this documentation, you’ll find the main functions of the application, as well as some guidance on how it works.',
     )
     .setVersion('1.0')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Enter your jwt token',
+    })
     .build();
 
   app.enableCors();
