@@ -63,23 +63,40 @@ describe('CardService', () => {
     profilePicture: '/path/to/test.png',
   };
 
+  const mockColumn = {
+    id: mockColumnId,
+    boardId: mockBoardId,
+    columnIndex: 0,
+    cards: [],
+    cover: './path-to-cover',
+    title: 'Column of new tasks',
+    createdAt: new Date(2023, 8, 4),
+    updateAt: new Date(2024, 2, 12),
+  };
+
   const mockCardPrismaPayload: CardPrismaType = {
-    id: 2829,
     ...mockNewCard,
+    id: mockNewCardId,
+    column: mockColumn,
+    columnId: mockColumnId,
+    title: mockNewCard.title,
+    description: mockNewCard.description,
     assignees: [
       {
-        cardId: 2829,
+        cardId: mockNewCardId,
         id: 1922920,
         userId: mockAssigneeFirstCard.id,
         user: mockAssigneeFirstCard,
       },
       {
-        cardId: 2829,
+        cardId: mockNewCardId,
         id: 1922920,
         userId: mockAssigneeSecondCard.id,
         user: mockAssigneeSecondCard,
       },
     ],
+    createdAt: new Date(2023, 8, 4),
+    updateAt: new Date(2024, 2, 12),
   };
 
   const mockCardDto: CardDto = new CardDto(mockCardPrismaPayload);
