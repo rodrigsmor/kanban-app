@@ -44,3 +44,14 @@ export type InvitePrismaType = Prisma.BoardInviteGetPayload<{
     };
   };
 }>;
+
+export type CardPrismaType = Prisma.CardGetPayload<{
+  include: {
+    assignees: {
+      include: {
+        user: true;
+      };
+    };
+    column: true;
+  };
+}>;
