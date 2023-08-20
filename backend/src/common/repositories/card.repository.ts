@@ -1,10 +1,40 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CardPrismaType } from '../../utils/@types/payloads.type';
+import { CreateCardDto } from '../../api/card/dto/create-card.dto';
 
 @Injectable()
 export class CardRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async createCard(newCardData: CreateCardDto): Promise<CardPrismaType> {
+    const cardAssigneesData = newCardData.assigneesIds.map((userId) => ({
+      userId,
+    }));
+
+    const newCard = await this.prisma.card.create({
+      data: {
+        description: newCardData?.description || '',
+        title: newCardData.title,
+        columnId: newCardData.columnId,
+        assignees: {
+          createMany: {
+            data: cardAssigneesData,
+          },
+        },
+      },
+      include: {
+        assignees: {
+          include: {
+            user: true,
+          },
+        },
+        column: true,
+      },
+    });
+
+    return newCard;
+  }
 
   async addAssigneesToCard(
     cardId: number,
