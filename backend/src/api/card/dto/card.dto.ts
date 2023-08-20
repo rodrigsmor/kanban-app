@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserDto } from '../../user/dto/user.dto';
+import { CardPrismaType } from '../../../utils/@types/payloads.type';
 
 export class CardDto {
   @ApiProperty({
@@ -45,4 +46,16 @@ export class CardDto {
     description: 'the date when the last update was made to this column.',
   })
   updateAt: Date;
+
+  // LABEL ADDS LABEL
+
+  constructor(card: CardPrismaType) {
+    this.id = card.id;
+    this.title = card.title;
+    this.columnId = card.columnId;
+    this.updateAt = card.updateAt;
+    this.createdAt = card.createdAt;
+    // ADDS LABEL
+    this.assignees = card.assignees.map(({ user }) => UserDto.fromUser(user));
+  }
 }
