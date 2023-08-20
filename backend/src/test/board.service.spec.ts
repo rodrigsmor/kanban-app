@@ -14,18 +14,17 @@ import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { BoardRolesEnum } from '../utils/enums';
+import { UserDto } from '../api/user/dto/user.dto';
 import { BoardDto } from '../api/board/dto/board.dto';
 import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BoardService } from '../api/board/board.service';
 import { TwoFactorService } from '../auth/two-factor.service';
-import { ColumnsWithCards } from '../utils/@types/board.types';
+import { DeleteBoardDTO } from '../api/board/dto/delete-board.dto';
 import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 import { EmailService } from '../utils/config/email-config-service';
 import { BoardSummaryDto } from '../api/board/dto/board-summary.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { UserDto } from '../api/user/dto/user.dto';
-import { DeleteBoardDTO } from '../api/board/dto/delete-board.dto';
 
 describe('BoardService', () => {
   let userService: UserService;
@@ -251,7 +250,7 @@ describe('BoardService', () => {
   });
 
   describe('createNewBoard', () => {
-    const mockColumnsCreated: Array<ColumnsWithCards> = [
+    const mockColumnsCreated: Array<ColumnPrismaType> = [
       { ...mockColumns, title: '⏳ pending', columnIndex: 0 },
       { ...mockColumns, title: '🚧 in progress', columnIndex: 1 },
       { ...mockColumns, title: '✅ done', columnIndex: 2 },

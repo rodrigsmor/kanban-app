@@ -4,15 +4,15 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
+import { CardDto } from '../api/card/dto/card.dto';
 import { CardService } from '../api/card/card.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { CardPrismaType } from '../utils/@types/payloads.type';
 import { CreateCardDto } from '../api/card/dto/create-card.dto';
 import { CardRepository } from '../common/repositories/card.repository';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { CardDto } from '../api/card/dto/card.dto';
-import { CardPrismaType } from '../utils/@types/payloads.type';
-import { User } from '@prisma/client';
 
 describe('CardService', () => {
   let cardService: CardService;
