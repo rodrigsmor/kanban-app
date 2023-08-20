@@ -33,6 +33,16 @@ export class CardDto {
 
   @ApiProperty({
     isArray: true,
+    type: [UserDto],
+    example: [
+      {
+        email: 'ana.julia@example.com',
+        firstName: 'Ana Júlia',
+        lastName: 'Carvalho Santana',
+        id: 2193,
+        profilePicture: '/path/to/julia.profile.png',
+      },
+    ],
     description: 'members who are assignees of this card',
   })
   assignees: UserDto[];

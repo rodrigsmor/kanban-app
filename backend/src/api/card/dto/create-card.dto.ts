@@ -46,9 +46,10 @@ export class CreateCardDto {
   @ApiProperty({
     isArray: true,
     required: false,
+    example: [263, 98, 52762],
     description:
       'This field is an array of members who serves as the assignees for this card',
-  })
+  })card
   @IsOptional()
   @IsArray({
     message: 'assigneesIds should be an array of numbers',
