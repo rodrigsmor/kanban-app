@@ -35,6 +35,20 @@ export class CreateCardDto {
   columnId: number;
 
   @ApiProperty({
+    required: true,
+    example:
+      'is the index that indicates the position of the card in the rows of the column (array)',
+  })
+  @IsNotEmpty({
+    message:
+      'It is necessary to indicate which is the position on the card rows',
+  })
+  @IsNumber(undefined, {
+    message: 'the row index needs to be a number',
+  })
+  rowIndex: number;
+
+  @ApiProperty({
     required: false,
     description:
       'This field is the card’s description, allowing Markdown-formatted text.',
@@ -59,4 +73,21 @@ export class CreateCardDto {
       'This field is an array of members who serves as the assignees for this card',
   })
   assigneesIds?: number[];
+
+  @IsOptional()
+  @IsArray({
+    message: 'labelsIds should be an array of numbers',
+  })
+  @IsNumber(
+    {},
+    { each: true, message: 'Each item in labelsIds should be a number' },
+  )
+  @ApiProperty({
+    isArray: true,
+    required: false,
+    example: [25, 19, 326],
+    description:
+      'is an array with the ids of the labels that have been added to that card',
+  })
+  labelsIds: number[];
 }

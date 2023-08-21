@@ -12,16 +12,30 @@ export class CardRepository {
       userId,
     }));
 
-    const newCard = await this.prisma.card.create({
+    const cardLabelsCreateManyData = newCardData.labelsIds.map((labelId) => ({
+      labelId,
+    }));
+
+    const cardCreated = await this.prisma.card.create({
       data: {
+        rowIndex: 0,
         description: newCardData?.description || '',
         title: newCardData.title,
         columnId: newCardData.columnId,
-        assignees: {
-          createMany: {
-            data: cardAssigneesData,
+        ...(cardAssigneesData.length > 0 && {
+          assignees: {
+            createMany: {
+              data: cardAssigneesData,
+            },
           },
-        },
+        }),
+        ...(cardLabelsCreateManyData.length > 0 && {
+          labels: {
+            createMany: {
+              data: cardLabelsCreateManyData,
+            },
+          },
+        }),
       },
       include: {
         assignees: {
@@ -29,11 +43,23 @@ export class CardRepository {
             user: true,
           },
         },
+        comments: {
+          include: {
+            attachments: true,
+            author: true,
+          },
+        },
+        labels: {
+          include: {
+            label: true,
+          },
+        },
         column: true,
+        attachments: true,
       },
     });
 
-    return newCard;
+    return cardCreated;
   }
 
   async addAssigneesToCard(
@@ -64,7 +90,19 @@ export class CardRepository {
             user: true,
           },
         },
+        comments: {
+          include: {
+            attachments: true,
+            author: true,
+          },
+        },
+        labels: {
+          include: {
+            label: true,
+          },
+        },
         column: true,
+        attachments: true,
       },
     });
 
