@@ -13,6 +13,8 @@ import { CardPrismaType } from '../utils/@types/payloads.type';
 import { CreateCardDto } from '../api/card/dto/create-card.dto';
 import { CardRepository } from '../common/repositories/card.repository';
 import { BoardRepository } from '../common/repositories/board.repository';
+import { AttachmentType } from '../utils/@types/attachment.type';
+import { AttachmentEnum } from '../utils/enums/attachment.enum';
 
 describe('CardService', () => {
   let cardService: CardService;
@@ -41,6 +43,8 @@ describe('CardService', () => {
     title: 'New column title',
     description: 'New description data',
     assigneesIds: [123, 9292],
+    rowIndex: 0,
+    labelsIds: [839, 9202, 2929],
   };
 
   const mockAssigneeFirstCard: User = {
@@ -97,6 +101,19 @@ describe('CardService', () => {
     ],
     createdAt: new Date(2023, 8, 4),
     updateAt: new Date(2024, 2, 12),
+    attachments: [
+      {
+        cardId: mockNewCardId,
+        id: 819,
+        path: '/path/to/file.pdf',
+        title: 'Support file',
+        commentId: 2,
+        type: 'File',
+      },
+    ],
+    comments: [],
+    labels: [],
+    rowIndex: 0,
   };
 
   const mockCardDto: CardDto = new CardDto(mockCardPrismaPayload);
