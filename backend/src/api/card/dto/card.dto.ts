@@ -1,3 +1,4 @@
+import { LabelDto } from './';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserDto } from '../../user/dto/user.dto';
 import { CardPrismaType } from '../../../utils/@types/payloads.type';
@@ -48,6 +49,19 @@ export class CardDto {
   assignees: UserDto[];
 
   @ApiProperty({
+    isArray: true,
+    description: 'the card labels',
+    example: [
+      {
+        id: 930,
+        name: 'Feature',
+        color: '#9AE19D',
+      },
+    ],
+  })
+  labels: LabelDto[];
+
+  @ApiProperty({
     description: 'the date this board was created.',
   })
   createdAt: Date;
@@ -57,15 +71,13 @@ export class CardDto {
   })
   updateAt: Date;
 
-  // LABEL ADDS LABEL
-
   constructor(card: CardPrismaType) {
     this.id = card.id;
     this.title = card.title;
     this.columnId = card.columnId;
     this.updateAt = card.updateAt;
     this.createdAt = card.createdAt;
-    // ADDS LABEL
+    this.labels = card.labels.map(({ label }) => new LabelDto(label));
     this.assignees = card.assignees.map(({ user }) => UserDto.fromUser(user));
   }
 }

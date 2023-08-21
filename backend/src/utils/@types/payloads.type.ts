@@ -11,7 +11,19 @@ export type BoardPrismaType = Prisma.BoardGetPayload<{
                 user: true;
               };
             };
+            comments: {
+              include: {
+                attachments: true;
+                author: true;
+              };
+            };
+            labels: {
+              include: {
+                label: true;
+              };
+            };
             column: true;
+            attachments: true;
           };
         };
       };
@@ -30,7 +42,19 @@ export type ColumnPrismaType = Prisma.ColumnGetPayload<{
             user: true;
           };
         };
+        comments: {
+          include: {
+            attachments: true;
+            author: true;
+          };
+        };
+        labels: {
+          include: {
+            label: true;
+          };
+        };
         column: true;
+        attachments: true;
       };
     };
   };
@@ -49,7 +73,19 @@ export type BoardMembershipType = Prisma.BoardMembershipGetPayload<{
                     user: true;
                   };
                 };
+                comments: {
+                  include: {
+                    attachments: true;
+                    author: true;
+                  };
+                };
+                labels: {
+                  include: {
+                    label: true;
+                  };
+                };
                 column: true;
+                attachments: true;
               };
             };
           };
@@ -76,6 +112,13 @@ export type InvitePrismaType = Prisma.BoardInviteGetPayload<{
                   };
                 };
                 column: true;
+                attachments: true;
+                comments: true;
+                labels: {
+                  include: {
+                    label: true;
+                  };
+                };
               };
             };
           };
@@ -94,6 +137,25 @@ export type CardPrismaType = Prisma.CardGetPayload<{
         user: true;
       };
     };
+    comments: {
+      include: {
+        attachments: true;
+        author: true;
+      };
+    };
+    labels: {
+      include: {
+        label: true;
+      };
+    };
     column: true;
+    attachments: true;
+  };
+}>;
+
+export type CommentPrismaType = Prisma.CommentGetPayload<{
+  include: {
+    author: true;
+    attachments: true;
   };
 }>;
