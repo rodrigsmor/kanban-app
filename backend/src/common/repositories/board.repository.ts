@@ -10,7 +10,18 @@ interface BoardMembershipUpdateData {
 
 const boardIncludeTemplate = {
   columns: {
-    include: { cards: true },
+    include: {
+      cards: {
+        include: {
+          assignees: {
+            include: {
+              user: true,
+            },
+          },
+          column: true,
+        },
+      },
+    },
   },
   owner: true,
   members: { select: { user: true, role: true } },
@@ -46,7 +57,18 @@ export class BoardRepository {
           orderBy: {
             columnIndex: 'asc',
           },
-          include: { cards: true },
+          include: {
+            cards: {
+              include: {
+                assignees: {
+                  include: {
+                    user: true,
+                  },
+                },
+                column: true,
+              },
+            },
+          },
         },
         owner: true,
         members: { select: { user: true, role: true } },
@@ -104,7 +126,18 @@ export class BoardRepository {
           orderBy: {
             columnIndex: 'asc',
           },
-          include: { cards: true },
+          include: {
+            cards: {
+              include: {
+                assignees: {
+                  include: {
+                    user: true,
+                  },
+                },
+                column: true,
+              },
+            },
+          },
         },
         owner: true,
         members: { select: { user: true, role: true } },

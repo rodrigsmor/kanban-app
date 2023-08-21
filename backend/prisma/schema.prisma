@@ -20,6 +20,7 @@ model User {
   ownedBoards       Board[]
   cards             CardAssignees[]
   password          String
+  comments          Comment[]
   isAdmin           Boolean   @default(false)
   twoFactors        TwoFactor[]
 }
@@ -37,6 +38,7 @@ model Board {
   isPinned          Boolean   @default(false)
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
+  labels            Label[]
 }
 
 model BoardMembership {
@@ -65,10 +67,60 @@ model Card {
   title             String
   description       String
   columnId          Int
+  rowIndex          Int
+  comments          Comment[]
   assignees         CardAssignees[]
+  labels            CardLabels[]
+  attachments       Attachment[]
   column            Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt
+}
+
+model Label {
+  id          Int @id @default(autoincrement())
+  name        String
+  color       String
+  cards       CardLabels[]
+  boardId     Int
+  board       Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id              Int @id @default(autoincrement())
+  content         String
+  authorId        Int
+  cardId          Int
+  attachments     Attachment[]
+  card            Card   @relation(fields: [cardId], references: [id])
+  author          User @relation(fields: [authorId], references: [id])
+  createdAt       DateTime  @default(now())
+  updateAt        DateTime  @updatedAt
+}
+
+enum AttachmentType {
+  File
+  Link
+}
+
+model Attachment {
+  id          Int @id @default(autoincrement())
+  path        String
+  title       String?
+  type        AttachmentType
+  commentId   Int?
+  comment     Comment? @relation(fields: [commentId], references: [id])
+  cardId      Int?
+  card        Card? @relation(fields: [cardId], references: [id])
+
+}
+
+model CardLabels {
+  id          Int @id @default(autoincrement())
+  cardId      Int
+  card        Card @relation(fields: [cardId], references: [id])
+  labelId     Int
+  label       Label @relation(fields: [labelId], references: [id])
 }
 
 model CardAssignees {
@@ -76,7 +128,7 @@ model CardAssignees {
   cardId    Int
   card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
   userId    Int
-  user      User    @relation(fields: [userId], references: [id])     
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 model BoardInvite {

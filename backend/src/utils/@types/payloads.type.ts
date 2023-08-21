@@ -3,7 +3,30 @@ import { Prisma } from '@prisma/client';
 export type BoardPrismaType = Prisma.BoardGetPayload<{
   include: {
     columns: {
-      include: { cards: true };
+      include: {
+        cards: {
+          include: {
+            assignees: {
+              include: {
+                user: true;
+              };
+            };
+            comments: {
+              include: {
+                attachments: true;
+                author: true;
+              };
+            };
+            labels: {
+              include: {
+                label: true;
+              };
+            };
+            column: true;
+            attachments: true;
+          };
+        };
+      };
     };
     owner: true;
     members: { select: { user: true; role: true } };
@@ -12,7 +35,28 @@ export type BoardPrismaType = Prisma.BoardGetPayload<{
 
 export type ColumnPrismaType = Prisma.ColumnGetPayload<{
   include: {
-    cards: true;
+    cards: {
+      include: {
+        assignees: {
+          include: {
+            user: true;
+          };
+        };
+        comments: {
+          include: {
+            attachments: true;
+            author: true;
+          };
+        };
+        labels: {
+          include: {
+            label: true;
+          };
+        };
+        column: true;
+        attachments: true;
+      };
+    };
   };
 }>;
 
@@ -21,7 +65,30 @@ export type BoardMembershipType = Prisma.BoardMembershipGetPayload<{
     board: {
       include: {
         columns: {
-          include: { cards: true };
+          include: {
+            cards: {
+              include: {
+                assignees: {
+                  include: {
+                    user: true;
+                  };
+                };
+                comments: {
+                  include: {
+                    attachments: true;
+                    author: true;
+                  };
+                };
+                labels: {
+                  include: {
+                    label: true;
+                  };
+                };
+                column: true;
+                attachments: true;
+              };
+            };
+          };
         };
         owner: true;
         members: { select: { user: true; role: true } };
@@ -36,11 +103,59 @@ export type InvitePrismaType = Prisma.BoardInviteGetPayload<{
     board: {
       include: {
         columns: {
-          include: { cards: true };
+          include: {
+            cards: {
+              include: {
+                assignees: {
+                  include: {
+                    user: true;
+                  };
+                };
+                column: true;
+                attachments: true;
+                comments: true;
+                labels: {
+                  include: {
+                    label: true;
+                  };
+                };
+              };
+            };
+          };
         };
         owner: true;
         members: { select: { user: true; role: true } };
       };
     };
+  };
+}>;
+
+export type CardPrismaType = Prisma.CardGetPayload<{
+  include: {
+    assignees: {
+      include: {
+        user: true;
+      };
+    };
+    comments: {
+      include: {
+        attachments: true;
+        author: true;
+      };
+    };
+    labels: {
+      include: {
+        label: true;
+      };
+    };
+    column: true;
+    attachments: true;
+  };
+}>;
+
+export type CommentPrismaType = Prisma.CommentGetPayload<{
+  include: {
+    author: true;
+    attachments: true;
   };
 }>;

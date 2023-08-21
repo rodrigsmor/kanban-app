@@ -1,6 +1,7 @@
 import { Card } from '@prisma/client';
 import { ColumnPrismaType } from './';
 import { ApiProperty } from '@nestjs/swagger';
+import { CardSummaryDto } from '../../api/card/dto/card-summary.dto';
 
 export class ColumnType {
   @ApiProperty({
@@ -31,9 +32,29 @@ export class ColumnType {
   updateAt: Date;
 
   @ApiProperty({
+    isArray: true,
+    example: [
+      {
+        id: 1929129,
+        columnId: 2,
+        title: '🛍 do the monthly shopping',
+        description: 'Do not forget to buy fruits and pasta.',
+        updateAt: new Date(2024, 4, 12),
+        createdAt: new Date(2024, 2, 8),
+        assignees: [
+          {
+            email: 'juliana.silva@example.com',
+            firstName: 'Juliana',
+            id: 282,
+            lastName: 'Silva Amaral Santana',
+            profilePicture: 'path/to/juliana-silva.jpg',
+          },
+        ],
+      },
+    ],
     description: '',
   })
-  cards: Array<Card>;
+  cards: Array<CardSummaryDto>;
 
   @ApiProperty({
     example: 1,
@@ -45,7 +66,7 @@ export class ColumnType {
     this.id = column.id;
     this.title = column.title;
     this.cover = column.cover;
-    this.cards = column.cards;
+    this.cards = column.cards.map((card) => new CardSummaryDto(card));
     this.updateAt = column.updateAt;
     this.createdAt = column.createdAt;
     this.columnIndex = column.columnIndex;
