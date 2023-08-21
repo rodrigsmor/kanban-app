@@ -12,6 +12,13 @@ export class CardDto {
 
   @ApiProperty({
     required: true,
+    example:
+      'is the index that indicates the position of the card in the rows of the column (array)',
+  })
+  rowIndex: number;
+
+  @ApiProperty({
+    required: true,
     example: '🔜 Write the project README',
   })
   title: string;
@@ -74,6 +81,7 @@ export class CardDto {
   constructor(card: CardPrismaType) {
     this.id = card.id;
     this.title = card.title;
+    this.rowIndex = card.rowIndex;
     this.columnId = card.columnId;
     this.updateAt = card.updateAt;
     this.createdAt = card.createdAt;

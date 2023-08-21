@@ -17,6 +17,13 @@ export class CardSummaryDto {
   title: string;
 
   @ApiProperty({
+    required: true,
+    example:
+      'is the index that indicates the position of the card in the rows of the column (array)',
+  })
+  rowIndex: number;
+
+  @ApiProperty({
     example: 0,
     required: true,
     description: 'the id of the column the card is part of',
@@ -76,6 +83,7 @@ export class CardSummaryDto {
   constructor(card: CardPrismaType) {
     this.id = card.id;
     this.title = card.title;
+    this.rowIndex = card.rowIndex;
     this.columnId = card.columnId;
     this.updateAt = card.updateAt;
     this.createdAt = card.createdAt;
