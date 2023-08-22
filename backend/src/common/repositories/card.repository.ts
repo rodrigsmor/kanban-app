@@ -1,7 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { EditCardDto } from '../../api/card/edit.card.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CardPrismaType } from '../../utils/@types/payloads.type';
 import { CreateCardDto } from '../../api/card/dto/create-card.dto';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class CardRepository {
@@ -60,6 +61,42 @@ export class CardRepository {
     });
 
     return cardCreated;
+  }
+
+  async editCard(newCardData: EditCardDto): Promise<CardPrismaType> {
+    const cardUpdated = await this.prisma.card.update({
+      where: { id: newCardData.cardId },
+      data: {
+        ...(newCardData?.title && { title: newCardData?.title }),
+        ...(newCardData?.rowIndex && { rowIndex: newCardData?.rowIndex }),
+        ...(newCardData?.columnId && { columnId: newCardData?.columnId }),
+        ...(newCardData?.description && {
+          description: newCardData?.description,
+        }),
+      },
+      include: {
+        assignees: {
+          include: {
+            user: true,
+          },
+        },
+        comments: {
+          include: {
+            attachments: true,
+            author: true,
+          },
+        },
+        labels: {
+          include: {
+            label: true,
+          },
+        },
+        column: true,
+        attachments: true,
+      },
+    });
+
+    return cardUpdated;
   }
 
   async addAssigneesToCard(
