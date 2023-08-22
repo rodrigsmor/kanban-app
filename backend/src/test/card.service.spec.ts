@@ -13,8 +13,7 @@ import { CardPrismaType } from '../utils/@types/payloads.type';
 import { CreateCardDto } from '../api/card/dto/create-card.dto';
 import { CardRepository } from '../common/repositories/card.repository';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { AttachmentType } from '../utils/@types/attachment.type';
-import { AttachmentEnum } from '../utils/enums/attachment.enum';
+import { EditCardDto } from '../api/card/dto/edit.card.dto';
 
 describe('CardService', () => {
   let cardService: CardService;
@@ -262,6 +261,232 @@ describe('CardService', () => {
         mockColumnId,
       );
       expect(cardRepository.createCard).toBeCalledWith(mockNewCard);
+    });
+  });
+
+  describe('updateCard', () => {
+    const mockEditCard: EditCardDto = {
+      cardId: mockCardDto.id,
+      title: '🔜 Edit title | Test',
+      columnId: mockCardDto.columnId,
+      description: 'my new description test',
+      rowIndex: 4,
+    };
+
+    const mockEditCardPrismaPayload: CardPrismaType = {
+      ...mockCardPrismaPayload,
+      title: mockEditCard.title,
+      columnId: mockEditCard.columnId,
+      description: mockEditCard.description,
+      rowIndex: mockEditCard.rowIndex,
+    };
+
+    const mockCardDtoUpdated = new CardDto(mockEditCardPrismaPayload);
+
+    it('should throw ForbiddenException if member has no permission to edit', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.updateCard(mockUserId, mockBoardId, mockEditCard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(cardRepository.editCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if the provided member is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
+        );
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.updateCard(mockUserId, mockBoardId, mockEditCard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'the user provided is not a member of this board',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(cardRepository.editCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw NotFoundException if column does not belong to given board', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.updateCard(mockUserId, mockBoardId, mockEditCard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'the column provided does not seem to exist',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+          mockBoardId,
+          mockColumnId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(cardRepository.editCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw NotFoundException if card does not belong to given board', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.updateCard(mockUserId, mockBoardId, mockEditCard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'the card provided does not seem to exist',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+          mockBoardId,
+          mockColumnId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockEditCard.cardId,
+        );
+        expect(cardRepository.editCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw an InternalServerException if an error occurs while updating the card', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(cardRepository, 'editCard')
+        .mockRejectedValueOnce(
+          new Error(
+            'There was a problem updating your card. Please try again later.',
+          ),
+        );
+
+      try {
+        await cardService.updateCard(mockUserId, mockBoardId, mockEditCard);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'There was a problem creating your new card. Please try again later.',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+          mockBoardId,
+          mockColumnId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockEditCard.cardId,
+        );
+        expect(cardRepository.editCard).toBeCalledWith(mockEditCard);
+      }
+    });
+
+    it('should update the card and return it', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(cardRepository, 'editCard')
+        .mockResolvedValueOnce(mockEditCardPrismaPayload);
+
+      const result = await cardService.updateCard(
+        mockUserId,
+        mockBoardId,
+        mockEditCard,
+      );
+
+      expect(result).toStrictEqual(mockCardDtoUpdated);
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        mockBoardId,
+        mockColumnId,
+      );
+      expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        mockBoardId,
+        mockEditCard.cardId,
+      );
+      expect(cardRepository.editCard).toBeCalledWith(mockEditCard);
     });
   });
 });
