@@ -58,6 +58,42 @@ export class CardService {
     boardId: number,
     newCardData: EditCardDto,
   ): Promise<CardDto> {
-    return null;
+    const hasPermission =
+      await this.boardRepository.checkIfMemberHasPermissionToEdit(
+        userId,
+        boardId,
+      );
+
+    if (!hasPermission)
+      throw new ForbiddenException(
+        'you do not have permission to perform this action',
+      );
+
+    const belongsToBoard =
+      await this.boardRepository.checkIfColumnBelongsToBoard(
+        boardId,
+        newCardData.columnId,
+      );
+
+    if (!belongsToBoard)
+      throw new NotFoundException('the column provided does not seem to exist');
+
+    const existOnBoard = await this.boardRepository.checkIfCardExistsOnBoard(
+      boardId,
+      newCardData.cardId,
+    );
+
+    if (!existOnBoard)
+      throw new NotFoundException('the card provided does not seem to exist');
+
+    try {
+      const cardUpdated = await this.cardRepository.editCard(newCardData);
+
+      return new CardDto(cardUpdated);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'There was a problem creating your new card. Please try again later.',
+      );
+    }
   }
 }
