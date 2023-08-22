@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CardDto, CreateCardDto } from './dto';
+import { CardDto, CreateCardDto, EditCardDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardRepository } from '../../common/repositories/board.repository';
 import { CardRepository } from '../../common/repositories/card.repository';
@@ -51,5 +51,13 @@ export class CardService {
         'There was a problem creating your new card. Please try again later.',
       );
     }
+  }
+
+  async updateCard(
+    userId: number,
+    boardId: number,
+    newCardData: EditCardDto,
+  ): Promise<CardDto> {
+    return null;
   }
 }
