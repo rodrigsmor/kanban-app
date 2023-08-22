@@ -242,4 +242,26 @@ export class BoardRepository {
 
     return column !== null;
   }
+
+  async checkIfCardExistsOnBoard(
+    boardId: number,
+    cardId: number,
+  ): Promise<boolean> {
+    const card = await this.prisma.board.findFirst({
+      where: {
+        id: boardId,
+        columns: {
+          some: {
+            cards: {
+              some: {
+                id: cardId,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return card !== null;
+  }
 }
