@@ -1,4 +1,4 @@
-import { EditCardDto } from '../../api/card/edit.card.dto';
+import { EditCardDto } from '../../api/card/dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CardPrismaType } from '../../utils/@types/payloads.type';
 import { CreateCardDto } from '../../api/card/dto/create-card.dto';
