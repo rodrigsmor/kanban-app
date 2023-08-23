@@ -8,16 +8,17 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
 
 ## 📜 Table of contents
 
-- [📒 Introduction](#📒-introduction)
-- [📜 Table of contents](#📜-table-of-contents)
-- [⚒️ Technologies](#️⚒️-technologies)
-- [📥 Installation](#📥-installation)
-- [⚙️ Settings](#️⚙️-settings)
-- [🚀 How to run?](#🚀-how-to-run)
-  - [🏃🏽‍♂️ Runnning the application](#️🏃🏽‍♂️-runnning-the-application)
-  - [📚 Documentation](#📚-documentation)
-  - [✅ Running tests](#✅-running-tests)
-- [🌎 Support links and tutorials](#🌎-support-links-and-tutorials)
+- [📒 Introduction](#-introduction)
+- [📜 Table of contents](#-table-of-contents)
+- [⚒️ Technologies](#️-technologies)
+- [📥 Installation](#-installation)
+- [⚙️ Settings](#️-settings)
+- [🚀 How to run?](#-how-to-run)
+  - [🏃🏽‍♂️ Runnning the application](#️-runnning-the-application)
+  - [📚 Documentation](#-documentation)
+  - [✅ Running tests](#-running-tests)
+- [🌎 Support links and tutorials](#-support-links-and-tutorials)
+- [👨🏽‍🦱 Author](#-author)
 
 ---
 
@@ -151,5 +152,28 @@ docker-compose run backend npm run test
 - 🔗 PostgreSQL docker host: https://hub.docker.com/_/postgres
 - 🔗 Jest documentation: https://jestjs.io/docs/getting-started
 - 🔗 GIT installing tutorial: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+
+## 👨🏽‍🦱 Author
+
+<img height="100px" src="https://avatars.githubusercontent.com/u/78985382?v=4" alt="Rodrigo profile picture">
+<p>Developed with love by <b size="48px">Rodrigo Moreira</b> 
+ 💜🚀</p>
+
+---
+
+<div>
+  <a href="mailto:rodrigsmor.pf@gmail.com">
+    <img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="gmail">
+  </a>
+  <a href="https://www.linkedin.com/in/psrodrigomoreira/">
+    <img src="https://img.shields.io/badge/linkedin-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn">
+  </a>
+  <a href="https://www.behance.net/rodrigsmor">
+    <img src="https://img.shields.io/badge/Behance-1769ff?style=for-the-badge&logo=behance&logoColor=white" alt="behance">
+  </a>
+  <a href="https://dev.to/psrodrigs">
+    <img src="https://img.shields.io/badge/dev.to-0A0A0A?style=for-the-badge&logo=devdotto&logoColor=white" alt="dev.to">
+  </a>
+</div>
 
 [def]: #📒-introduction
