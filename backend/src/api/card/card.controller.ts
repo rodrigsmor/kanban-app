@@ -3,12 +3,18 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -18,6 +24,7 @@ import { CardService } from './card.service';
 import { EditCardDto } from './dto/edit.card.dto';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UserId } from '../../common/decorators/get-user-id.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Card')
 @Controller('/api/card')
@@ -60,5 +67,35 @@ export class CardController {
     @Body() newCardData: EditCardDto,
   ): Promise<CardDto> {
     return await this.cardService.updateCard(userId, boardId, newCardData);
+  }
+
+  @Patch('/:cardId/cover')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    description:
+      'This endpoint adds a new cover image to the card. It deletes the old cover if one already exists. If you want to add images without necessarily deleting the old ones, you’ll need to add an attachment.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        cover: {
+          type: 'string',
+          format: 'binary',
+          description: 'The new cover image of the provided card',
+        },
+      },
+    },
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('cover'))
+  async setCardCover(
+    @UserId() userId: number,
+    @Param('cardId') cardId: number,
+    @Query('boardId') boardId: number,
+    @UploadedFile() cover: Express.Multer.File,
+  ): Promise<CardDto> {
+    return this.cardService.setCardCover(userId, cardId, boardId, cover);
   }
 }
