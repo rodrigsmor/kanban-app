@@ -66,6 +66,7 @@ model Card {
   id                Int       @id @default(autoincrement())
   title             String
   description       String
+  cover             String?
   columnId          Int
   rowIndex          Int
   comments          Comment[]
