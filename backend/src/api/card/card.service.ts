@@ -96,4 +96,44 @@ export class CardService {
       );
     }
   }
+
+  async setCardCover(
+    userId: number,
+    cardId: number,
+    boardId: number,
+    cover: Express.Multer.File,
+  ): Promise<CardDto> {
+    const hasPermission =
+      await this.boardRepository.checkIfMemberHasPermissionToEdit(
+        userId,
+        boardId,
+      );
+
+    if (!hasPermission)
+      throw new ForbiddenException(
+        'you do not have permission to perform this action',
+      );
+
+    const hasCardOnBoard = await this.boardRepository.checkIfCardExistsOnBoard(
+      boardId,
+      cardId,
+    );
+
+    if (!hasCardOnBoard)
+      throw new NotFoundException('the card provided does not seem to exist');
+
+    try {
+      const cardUpdated = await this.cardRepository.updateCardCover(
+        cardId,
+        cover,
+      );
+
+      return new CardDto(cardUpdated);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error?.message ||
+          'There was a problem changing the cover card. Please try again later.',
+      );
+    }
+  }
 }
