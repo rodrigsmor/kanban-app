@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -93,6 +94,53 @@ export class CardService {
     } catch (error) {
       throw new InternalServerErrorException(
         'There was a problem creating your new card. Please try again later.',
+      );
+    }
+  }
+
+  async addAssigneesToCard(
+    userId: number,
+    boardId: number,
+    cardId: number,
+    assignessIds: number[],
+  ): Promise<CardDto> {
+    const hasPermission =
+      await this.boardRepository.checkIfMemberHasPermissionToEdit(
+        userId,
+        boardId,
+      );
+
+    if (!hasPermission)
+      throw new ForbiddenException(
+        'you do not have permission to perform this action',
+      );
+
+    const hasCardOnBoard = await this.boardRepository.checkIfCardExistsOnBoard(
+      boardId,
+      cardId,
+    );
+
+    if (!hasCardOnBoard)
+      throw new NotFoundException('the card provided does not seem to exist');
+
+    const areAllAssigneesValid =
+      await this.boardRepository.areUsersMembersOfBoard(assignessIds, boardId);
+
+    if (!areAllAssigneesValid)
+      throw new BadRequestException(
+        'some of the members provided do not seem to exist.',
+      );
+
+    try {
+      const cardUpdated = await this.cardRepository.addAssigneesToCard(
+        cardId,
+        assignessIds,
+      );
+
+      return new CardDto(cardUpdated);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'There was a problem adding new assignees to card. Please try again later.',
       );
     }
   }
