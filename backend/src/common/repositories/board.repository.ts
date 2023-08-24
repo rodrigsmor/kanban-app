@@ -243,6 +243,28 @@ export class BoardRepository {
     return column !== null;
   }
 
+  async areUsersMembersOfBoard(
+    membersIds: number[],
+    boardId: number,
+  ): Promise<boolean> {
+    const board = await this.prisma.board.findUnique({
+      where: {
+        id: boardId,
+      },
+      include: {
+        members: {
+          where: {
+            userId: {
+              in: membersIds,
+            },
+          },
+        },
+      },
+    });
+
+    return board?.members.length === membersIds.length;
+  }
+
   async checkIfCardExistsOnBoard(
     boardId: number,
     cardId: number,
