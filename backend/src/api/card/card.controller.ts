@@ -19,7 +19,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CardDto } from './dto';
+import { CardAssigneesDto, CardDto } from './dto';
 import { CardService } from './card.service';
 import { EditCardDto } from './dto/edit.card.dto';
 import { CreateCardDto } from './dto/create-card.dto';
@@ -67,6 +67,29 @@ export class CardController {
     @Body() newCardData: EditCardDto,
   ): Promise<CardDto> {
     return await this.cardService.updateCard(userId, boardId, newCardData);
+  }
+
+  @Patch('/:cardId/join')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    description: 'This endpoint will adds a new assignee to the card',
+  })
+  @ApiResponse({
+    status: 200,
+    type: CardDto,
+    description: 'It will return the updated card including all assignees',
+  })
+  async addAssigneeToCard(
+    @UserId() userId: number,
+    @Query('boardId') boardId: number,
+    @Body() assigneesIds: CardAssigneesDto,
+  ): Promise<CardDto> {
+    return this.cardService.addAssigneeToCard(
+      userId,
+      boardId,
+      assigneesIds.assigneesIds,
+    );
   }
 
   @Patch('/:cardId/cover')
