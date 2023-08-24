@@ -31,6 +31,13 @@ export class CardSummaryDto {
   columnId: number;
 
   @ApiProperty({
+    example: '/path/to/card-cover.png',
+    required: false,
+    description: 'path to the card cover',
+  })
+  cover?: string;
+
+  @ApiProperty({
     required: false,
     description:
       'This field is the card’s description, allowing Markdown-formatted text.',
@@ -83,6 +90,7 @@ export class CardSummaryDto {
   constructor(card: CardPrismaType) {
     this.id = card.id;
     this.title = card.title;
+    this.cover = card.cover;
     this.rowIndex = card.rowIndex;
     this.columnId = card.columnId;
     this.updateAt = card.updateAt;

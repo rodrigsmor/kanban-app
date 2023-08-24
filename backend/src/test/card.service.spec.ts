@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
@@ -8,12 +9,14 @@ import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
 import { CardDto } from '../api/card/dto/card.dto';
 import { CardService } from '../api/card/card.service';
+import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EditCardDto } from '../api/card/dto/edit.card.dto';
 import { CardPrismaType } from '../utils/@types/payloads.type';
 import { CreateCardDto } from '../api/card/dto/create-card.dto';
 import { CardRepository } from '../common/repositories/card.repository';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { EditCardDto } from '../api/card/dto/edit.card.dto';
+import { Readable } from 'stream';
 
 describe('CardService', () => {
   let cardService: CardService;
@@ -83,6 +86,7 @@ describe('CardService', () => {
     column: mockColumn,
     columnId: mockColumnId,
     title: mockNewCard.title,
+    cover: 'path/to/card-cover.png',
     description: mockNewCard.description,
     assignees: [
       {
@@ -116,6 +120,19 @@ describe('CardService', () => {
   };
 
   const mockCardDto: CardDto = new CardDto(mockCardPrismaPayload);
+
+  const mockCardCover: Express.Multer.File = {
+    fieldname: 'picture',
+    originalname: 'card-cover.jpg',
+    encoding: '7bit',
+    mimetype: 'image/jpeg',
+    size: 1024,
+    buffer: Buffer.from('file-content'),
+    stream: new Readable(),
+    destination: '',
+    filename: 'card-cover',
+    path: '/path/to/new-card-cover.jpg',
+  };
 
   describe('createCard', () => {
     it('should throw ForbiddenException if member has no permission to edit', async () => {
@@ -487,6 +504,479 @@ describe('CardService', () => {
         mockEditCard.cardId,
       );
       expect(cardRepository.editCard).toBeCalledWith(mockEditCard);
+    });
+  });
+
+  describe('addAssigneeToCard', () => {
+    const mockAssigneesIds = [23, 12];
+
+    const mockCardWithNewAssignees: CardPrismaType = {
+      ...mockCardPrismaPayload,
+      assignees: [
+        {
+          cardId: mockCardDto.id,
+          id: 1922920,
+          userId: mockAssigneeFirstCard.id,
+          user: mockAssigneeFirstCard,
+        },
+        {
+          cardId: mockCardDto.id,
+          id: 1922920,
+          userId: mockAssigneeSecondCard.id,
+          user: mockAssigneeSecondCard,
+        },
+        {
+          cardId: mockCardDto.id,
+          id: 9829904494,
+          user: {
+            id: 23,
+            firstName: 'Josivaldo test',
+            lastName: 'Test surname',
+            email: 'josivaldo.ex@example.test',
+            isAdmin: false,
+            password: 'password',
+            profilePicture: '/path/to/josivaldo-image.png',
+          },
+          userId: 23,
+        },
+        {
+          cardId: mockCardDto.id,
+          id: 9829904494,
+          user: {
+            id: 12,
+            firstName: 'Mary test',
+            lastName: 'Jane test',
+            email: 'mary@example.test',
+            isAdmin: false,
+            password: 'password',
+            profilePicture: '/path/to/mary-jane-image.png',
+          },
+          userId: 12,
+        },
+      ],
+    };
+
+    it('should throw ForbiddenException if user has no permission to edit', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'areUsersMembersOfBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(cardRepository, 'addAssigneesToCard')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await cardService.addAssigneesToCard(
+          mockUserId,
+          mockBoardId,
+          mockCardDto.id,
+          mockAssigneesIds,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.areUsersMembersOfBoard).not.toBeCalled();
+        expect(cardRepository.addAssigneesToCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if user is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException('You are not a member of this board'),
+        );
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'areUsersMembersOfBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(cardRepository, 'addAssigneesToCard')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await cardService.addAssigneesToCard(
+          mockUserId,
+          mockBoardId,
+          mockCardDto.id,
+          mockAssigneesIds,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'You are not a member of this board',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.areUsersMembersOfBoard).not.toBeCalled();
+        expect(cardRepository.addAssigneesToCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw NotFoundException if the provided card is not a board card', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'areUsersMembersOfBoard')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(cardRepository, 'addAssigneesToCard')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await cardService.addAssigneesToCard(
+          mockUserId,
+          mockBoardId,
+          mockCardDto.id,
+          mockAssigneesIds,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'the card provided does not seem to exist',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockCardDto.id,
+        );
+        expect(boardRepository.areUsersMembersOfBoard).not.toBeCalled();
+        expect(cardRepository.addAssigneesToCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw BadRequestException if any of the provided assignees Ids are not board members', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'areUsersMembersOfBoard')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(cardRepository, 'addAssigneesToCard')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await cardService.addAssigneesToCard(
+          mockUserId,
+          mockBoardId,
+          mockCardDto.id,
+          mockAssigneesIds,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toStrictEqual(
+          'some of the members provided do not seem to exist.',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockCardDto.id,
+        );
+        expect(boardRepository.areUsersMembersOfBoard).toBeCalledWith(
+          mockAssigneesIds,
+          mockBoardId,
+        );
+        expect(cardRepository.addAssigneesToCard).not.toBeCalled();
+      }
+    });
+
+    it('should throw InternalServerException if an error occurs while adding assignees to card', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'areUsersMembersOfBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(cardRepository, 'addAssigneesToCard')
+        .mockRejectedValueOnce(
+          new Error(
+            'There was a problem adding new assignees to card. Please try again later.',
+          ),
+        );
+
+      try {
+        await cardService.addAssigneesToCard(
+          mockUserId,
+          mockBoardId,
+          mockCardDto.id,
+          mockAssigneesIds,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'There was a problem adding new assignees to card. Please try again later.',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockCardDto.id,
+        );
+        expect(boardRepository.areUsersMembersOfBoard).toBeCalledWith(
+          mockAssigneesIds,
+          mockBoardId,
+        );
+        expect(cardRepository.addAssigneesToCard).toBeCalledWith(
+          mockCardDto.id,
+          mockAssigneesIds,
+        );
+      }
+    });
+
+    it('should add new assignees to card and return the card updated', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'areUsersMembersOfBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(cardRepository, 'addAssigneesToCard')
+        .mockResolvedValueOnce(mockCardWithNewAssignees);
+
+      const result = await cardService.addAssigneesToCard(
+        mockUserId,
+        mockBoardId,
+        mockCardDto.id,
+        mockAssigneesIds,
+      );
+
+      expect(result).toStrictEqual(new CardDto(mockCardWithNewAssignees));
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        mockBoardId,
+        mockCardDto.id,
+      );
+      expect(boardRepository.areUsersMembersOfBoard).toBeCalledWith(
+        mockAssigneesIds,
+        mockBoardId,
+      );
+      expect(cardRepository.addAssigneesToCard).toBeCalledWith(
+        mockCardDto.id,
+        mockAssigneesIds,
+      );
+    });
+  });
+
+  describe('setCardCover', () => {
+    const mockCardCoverPrismaPayload: CardPrismaType = {
+      ...mockCardPrismaPayload,
+      cover: mockCardCover.path,
+    };
+
+    it('should throw ForbiddenException if member has no permission to edit', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(false);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(cardRepository, 'updateCardCover').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.setCardCover(
+          mockUserId,
+          mockCardDto.id,
+          mockBoardId,
+          mockCardCover,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(ForbiddenException);
+        expect(error.message).toStrictEqual(
+          'you do not have permission to perform this action',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(cardRepository.updateCardCover).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if the provided member is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
+        );
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(null);
+      jest.spyOn(cardRepository, 'updateCardCover').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.setCardCover(
+          mockUserId,
+          mockCardDto.id,
+          mockBoardId,
+          mockCardCover,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'the user provided is not a member of this board',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(cardRepository.updateCardCover).not.toBeCalled();
+      }
+    });
+
+    it('should throw NotFoundException if card does not belong to given board', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(cardRepository, 'updateCardCover').mockResolvedValueOnce(null);
+
+      try {
+        await cardService.setCardCover(
+          mockUserId,
+          mockCardDto.id,
+          mockBoardId,
+          mockCardCover,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual(
+          'the card provided does not seem to exist',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockCardDto.id,
+        );
+        expect(cardRepository.updateCardCover).not.toBeCalled();
+      }
+    });
+
+    it('should throw an InternalServerException if an error occurs while changing the card cover', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(cardRepository, 'updateCardCover')
+        .mockRejectedValueOnce(
+          new Error(
+            'There was a problem changing the cover card. Please try again later.',
+          ),
+        );
+
+      try {
+        await cardService.setCardCover(
+          mockUserId,
+          mockCardDto.id,
+          mockBoardId,
+          mockCardCover,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'There was a problem changing the cover card. Please try again later.',
+        );
+        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+          mockBoardId,
+          mockCardDto.id,
+        );
+        expect(cardRepository.updateCardCover).toBeCalledWith(
+          mockCardDto.id,
+          mockCardCover,
+        );
+      }
+    });
+
+    it('should update card cover and return it', async () => {
+      jest
+        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(cardRepository, 'updateCardCover')
+        .mockResolvedValueOnce(mockCardCoverPrismaPayload);
+
+      const result = await cardService.setCardCover(
+        mockUserId,
+        mockCardDto.id,
+        mockBoardId,
+        mockCardCover,
+      );
+
+      expect(result).toStrictEqual(new CardDto(mockCardCoverPrismaPayload));
+      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        mockBoardId,
+        mockCardDto.id,
+      );
+      expect(cardRepository.updateCardCover).toBeCalledWith(
+        mockCardDto.id,
+        mockCardCover,
+      );
     });
   });
 });

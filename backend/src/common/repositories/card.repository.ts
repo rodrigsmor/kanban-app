@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import { EditCardDto } from '../../api/card/dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CardPrismaType } from '../../utils/@types/payloads.type';
@@ -74,6 +75,52 @@ export class CardRepository {
           description: newCardData?.description,
         }),
       },
+      include: {
+        assignees: {
+          include: {
+            user: true,
+          },
+        },
+        comments: {
+          include: {
+            attachments: true,
+            author: true,
+          },
+        },
+        labels: {
+          include: {
+            label: true,
+          },
+        },
+        column: true,
+        attachments: true,
+      },
+    });
+
+    return cardUpdated;
+  }
+
+  async updateCardCover(
+    cardId: number,
+    cover: Express.Multer.File,
+  ): Promise<CardPrismaType> {
+    const oldCard = await this.prisma.card.findUnique({
+      where: { id: cardId },
+    });
+
+    if (oldCard?.cover && fs.existsSync(oldCard.cover)) {
+      try {
+        fs.unlinkSync(oldCard.cover);
+      } catch (error) {
+        throw new InternalServerErrorException(
+          'Something went wrong when updating the card cover. Try again later.',
+        );
+      }
+    }
+
+    const cardUpdated = await this.prisma.card.update({
+      where: { id: cardId },
+      data: { cover: cover?.path },
       include: {
         assignees: {
           include: {
