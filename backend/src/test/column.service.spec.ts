@@ -5,13 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { BoardPrismaType } from '../utils/@types';
 import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ColumnService } from '../api/column/column.service';
-import { BoardPrismaType, ColumnType } from '../utils/@types';
 import { EditColumnDto } from '../api/column/dto/edit-column.dto';
 import { CreateColumnDto } from '../api/column/dto/create-column.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
+import { ColumnDto } from '../api/column/dto/column.dto';
 
 describe('ColumnService', () => {
   let userService: UserService;
@@ -74,8 +75,8 @@ describe('ColumnService', () => {
     ownerId: mockUserId,
   };
 
-  const mockColumnsUpdated: ColumnType[] = mockBoardUpdated.columns.map(
-    (column) => new ColumnType(column),
+  const mockColumnsUpdated: ColumnDto[] = mockBoardUpdated.columns.map(
+    (column) => new ColumnDto(column),
   );
 
   const mockEditColumnDto: EditColumnDto = {
@@ -490,9 +491,9 @@ describe('ColumnService', () => {
         ],
       };
 
-      const mockColumnsTitleUpdated: ColumnType[] =
+      const mockColumnsTitleUpdated: ColumnDto[] =
         mockBoardColumnTitleUpdated.columns.map(
-          (column) => new ColumnType(column),
+          (column) => new ColumnDto(column),
         );
 
       jest
@@ -554,9 +555,9 @@ describe('ColumnService', () => {
         ],
       };
 
-      const mockColumnIndexUpdated: ColumnType[] =
+      const mockColumnIndexUpdated: ColumnDto[] =
         mockBoardColumnIndexUpdated.columns.map(
-          (column) => new ColumnType(column),
+          (column) => new ColumnDto(column),
         );
 
       jest
@@ -617,8 +618,8 @@ describe('ColumnService', () => {
         ],
       };
 
-      const mockColumnsUpdated: ColumnType[] =
-        mockBoardColumnsUpdated.columns.map((column) => new ColumnType(column));
+      const mockColumnsUpdated: ColumnDto[] =
+        mockBoardColumnsUpdated.columns.map((column) => new ColumnDto(column));
 
       jest
         .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
@@ -807,8 +808,8 @@ describe('ColumnService', () => {
         ],
       };
 
-      const mockColumns: ColumnType[] = mockBoardUpdatedReturn.columns.map(
-        (column) => new ColumnType(column),
+      const mockColumns: ColumnDto[] = mockBoardUpdatedReturn.columns.map(
+        (column) => new ColumnDto(column),
       );
 
       jest
