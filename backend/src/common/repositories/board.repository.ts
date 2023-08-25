@@ -187,7 +187,7 @@ export class BoardRepository {
     });
   }
 
-  async checkIfColumnBelongsToBoard(
+  async isColumnPartOfBoard(
     boardId: number,
     columnId: number,
   ): Promise<boolean> {
@@ -198,7 +198,7 @@ export class BoardRepository {
     return column !== null;
   }
 
-  async checkIfBoardMemberIsAdmin(
+  async isMemberAdminOfBoard(
     userId: number,
     boardId: number,
   ): Promise<boolean> {
@@ -209,7 +209,7 @@ export class BoardRepository {
     return board && board.role === BoardRolesEnum.ADMIN;
   }
 
-  async checkIfMemberHasPermissionToEdit(
+  async isMemberAuthorizedToEdit(
     userId: number,
     boardId: number,
   ): Promise<boolean> {
@@ -227,7 +227,7 @@ export class BoardRepository {
     );
   }
 
-  async checkIfColumnIndexIsRepeated(
+  async hasDuplicateColumnIndex(
     boardId: number,
     columnIndex: number,
   ): Promise<boolean> {
