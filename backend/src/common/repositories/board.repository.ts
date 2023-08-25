@@ -265,7 +265,7 @@ export class BoardRepository {
     return board?.members.length === membersIds.length;
   }
 
-  async checkIfCardExistsOnBoard(
+  async isCardPresentOnBoard(
     boardId: number,
     cardId: number,
   ): Promise<boolean> {
