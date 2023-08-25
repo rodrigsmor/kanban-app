@@ -137,7 +137,7 @@ export class BoardService {
     memberId: number,
     role: BoardRolesEnum,
   ): Promise<UserDto> {
-    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+    const isAdmin = await this.boardRepository.isMemberAdminOfBoard(
       userId,
       boardId,
     );
@@ -173,7 +173,7 @@ export class BoardService {
     userId: number,
     boardId: number,
   ): Promise<string> {
-    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+    const isAdmin = await this.boardRepository.isMemberAdminOfBoard(
       userId,
       boardId,
     );
@@ -208,7 +208,7 @@ export class BoardService {
   }
 
   async deleteBoard(userId: number, boardId: number, authData: DeleteBoardDTO) {
-    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+    const isAdmin = await this.boardRepository.isMemberAdminOfBoard(
       userId,
       boardId,
     );

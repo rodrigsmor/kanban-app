@@ -23,24 +23,20 @@ export class CardService {
     boardId: number,
     newCard: CreateCardDto,
   ): Promise<CardDto> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new ForbiddenException(
         'you do not have permission to perform this action',
       );
 
-    const belongsToBoard =
-      await this.boardRepository.checkIfColumnBelongsToBoard(
-        boardId,
-        newCard.columnId,
-      );
+    const hasColumnOnBoard = await this.boardRepository.isColumnPartOfBoard(
+      boardId,
+      newCard.columnId,
+    );
 
-    if (!belongsToBoard)
+    if (!hasColumnOnBoard)
       throw new NotFoundException('the column provided does not seem to exist');
 
     try {
@@ -59,27 +55,23 @@ export class CardService {
     boardId: number,
     newCardData: EditCardDto,
   ): Promise<CardDto> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new ForbiddenException(
         'you do not have permission to perform this action',
       );
 
-    const belongsToBoard =
-      await this.boardRepository.checkIfColumnBelongsToBoard(
-        boardId,
-        newCardData.columnId,
-      );
+    const hasColumnOnBoard = await this.boardRepository.isColumnPartOfBoard(
+      boardId,
+      newCardData.columnId,
+    );
 
-    if (!belongsToBoard)
+    if (!hasColumnOnBoard)
       throw new NotFoundException('the column provided does not seem to exist');
 
-    const existOnBoard = await this.boardRepository.checkIfCardExistsOnBoard(
+    const existOnBoard = await this.boardRepository.isCardPresentOnBoard(
       boardId,
       newCardData.cardId,
     );
@@ -104,18 +96,15 @@ export class CardService {
     cardId: number,
     assignessIds: number[],
   ): Promise<CardDto> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new ForbiddenException(
         'you do not have permission to perform this action',
       );
 
-    const hasCardOnBoard = await this.boardRepository.checkIfCardExistsOnBoard(
+    const hasCardOnBoard = await this.boardRepository.isCardPresentOnBoard(
       boardId,
       cardId,
     );
@@ -151,18 +140,15 @@ export class CardService {
     boardId: number,
     cover: Express.Multer.File,
   ): Promise<CardDto> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new ForbiddenException(
         'you do not have permission to perform this action',
       );
 
-    const hasCardOnBoard = await this.boardRepository.checkIfCardExistsOnBoard(
+    const hasCardOnBoard = await this.boardRepository.isCardPresentOnBoard(
       boardId,
       cardId,
     );
