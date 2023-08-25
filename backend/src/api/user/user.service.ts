@@ -1,8 +1,8 @@
+import * as fs from 'fs';
 import { EditUserDto, UserDto } from './dto';
+import { deleteFilePath } from '../../utils/functions';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-
-import * as fs from 'fs';
 
 @Injectable()
 export class UserService {
@@ -48,7 +48,7 @@ export class UserService {
     const newPicturePath = `${picture.path}`;
 
     if (user.profilePicture && fs.existsSync(user.profilePicture)) {
-      await this.deleteFile(user.profilePicture);
+      await deleteFilePath(user.profilePicture);
     }
 
     const userUpdated = await this.prisma.user.update({
@@ -57,14 +57,5 @@ export class UserService {
     });
 
     return UserDto.fromUser(userUpdated);
-  }
-
-  async deleteFile(filePath: string): Promise<void> {
-    try {
-      fs.unlinkSync(filePath);
-      console.log('it was deleted :)');
-    } catch (err) {
-      console.log('Was not possible to delete your file');
-    }
   }
 }
