@@ -5,9 +5,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ColumnType } from '../../utils/@types';
 import { UserService } from '../user/user.service';
-import { CreateColumnDto, EditColumnDto } from './dto';
+import { ColumnDto, CreateColumnDto, EditColumnDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardRepository } from '../../common/repositories/board.repository';
 
@@ -23,7 +22,7 @@ export class ColumnService {
     userId: number,
     boardId: number,
     columnData: CreateColumnDto,
-  ): Promise<ColumnType[]> {
+  ): Promise<ColumnDto[]> {
     const hasPermissionToEdit =
       await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
@@ -59,8 +58,8 @@ export class ColumnService {
 
     const board = await this.boardRepository.findBoardById(boardId, userId);
 
-    const columns: ColumnType[] = board.columns.map(
-      (column) => new ColumnType(column),
+    const columns: ColumnDto[] = board.columns.map(
+      (column) => new ColumnDto(column),
     );
 
     return columns;
@@ -70,7 +69,7 @@ export class ColumnService {
     userId: number,
     boardId: number,
     columnData: EditColumnDto,
-  ): Promise<ColumnType[]> {
+  ): Promise<ColumnDto[]> {
     const hasPermissionToEdit =
       await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
@@ -118,8 +117,8 @@ export class ColumnService {
 
     const board = await this.boardRepository.findBoardById(boardId, userId);
 
-    const columns: ColumnType[] = board.columns.map(
-      (column) => new ColumnType(column),
+    const columns: ColumnDto[] = board.columns.map(
+      (column) => new ColumnDto(column),
     );
 
     return columns;
@@ -129,7 +128,7 @@ export class ColumnService {
     userId: number,
     boardId: number,
     columnId: number,
-  ): Promise<ColumnType[]> {
+  ): Promise<ColumnDto[]> {
     const hasPermissionToEdit =
       await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
@@ -158,8 +157,8 @@ export class ColumnService {
 
     const board = await this.boardRepository.findBoardById(boardId, userId);
 
-    const columns: ColumnType[] = board.columns.map(
-      (column) => new ColumnType(column),
+    const columns: ColumnDto[] = board.columns.map(
+      (column) => new ColumnDto(column),
     );
 
     return columns;

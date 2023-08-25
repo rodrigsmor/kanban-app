@@ -9,11 +9,10 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ColumnType } from 'src/utils/@types';
 import { ColumnService } from './column.service';
-import { CreateColumnDto, EditColumnDto } from './dto';
-import { UserId } from '../../common/decorators/get-user-id.decorator';
+import { ColumnDto, CreateColumnDto, EditColumnDto } from './dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UserId } from '../../common/decorators/get-user-id.decorator';
 
 @ApiTags('Columns')
 @Controller('/api/column')
@@ -29,7 +28,7 @@ export class ColumnController {
   @ApiResponse({
     status: 201,
     isArray: true,
-    type: ColumnType,
+    type: ColumnDto,
     description:
       'It will return the updated table column list, including the column that was just created.',
   })
@@ -37,7 +36,7 @@ export class ColumnController {
     @UserId() userId: number,
     @Param('boardId') boardId: number,
     @Body() columnData: CreateColumnDto,
-  ): Promise<ColumnType[]> {
+  ): Promise<ColumnDto[]> {
     return await this.columnService.createNewColumn(
       userId,
       boardId,
@@ -53,14 +52,14 @@ export class ColumnController {
   @ApiResponse({
     status: 200,
     isArray: true,
-    type: ColumnType,
+    type: ColumnDto,
     description: 'It will return the updated column list.',
   })
   async updateColumn(
     @UserId() userId: number,
     @Param('boardId') boardId: number,
     @Body() newColumnData: EditColumnDto,
-  ): Promise<ColumnType[]> {
+  ): Promise<ColumnDto[]> {
     return await this.columnService.updateColumn(
       userId,
       boardId,
@@ -76,7 +75,7 @@ export class ColumnController {
   @ApiResponse({
     status: 200,
     isArray: true,
-    type: ColumnType,
+    type: ColumnDto,
     description:
       'It will return the updated column list, excluding the column that was just deleted.',
   })
@@ -84,7 +83,7 @@ export class ColumnController {
     @UserId() userId: number,
     @Param('boardId') boardId: number,
     @Query('columnId') columnId: number,
-  ): Promise<ColumnType[]> {
+  ): Promise<ColumnDto[]> {
     return await this.columnService.deleteColumn(userId, boardId, columnId);
   }
 }
