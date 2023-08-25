@@ -92,7 +92,7 @@ export class ColumnService {
         );
     }
 
-    const columnExistsOnBoard = await this.boardRepository.isCardPresentOnBoard(
+    const columnExistsOnBoard = await this.boardRepository.isColumnPartOfBoard(
       boardId,
       columnData.columnId,
     );
@@ -138,7 +138,7 @@ export class ColumnService {
         'you do not have permission to perform this action',
       );
 
-    const columnExistsOnBoard = await this.boardRepository.isCardPresentOnBoard(
+    const columnExistsOnBoard = await this.boardRepository.isColumnPartOfBoard(
       boardId,
       columnId,
     );
