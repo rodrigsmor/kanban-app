@@ -421,7 +421,7 @@ describe('BoardService', () => {
   describe('updateMemberRole', () => {
     it('should throw ForbiddenException when current user is not an admin', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(false);
       jest
         .spyOn(boardRepository, 'findBoardMembershipByIds')
@@ -440,10 +440,7 @@ describe('BoardService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('You cannot perform this change');
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
-          203,
-          152,
-        );
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(203, 152);
         expect(boardRepository.findBoardMembershipByIds).not.toBeCalled();
         expect(boardRepository.updateBoardMembership).not.toBeCalled();
       }
@@ -451,7 +448,7 @@ describe('BoardService', () => {
 
     it('should throw BadRequestException if the role provided is not valid', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'findBoardMembershipByIds')
@@ -470,10 +467,7 @@ describe('BoardService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toBe('the role provided is not a valid role');
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
-          203,
-          152,
-        );
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(203, 152);
         expect(boardRepository.findBoardMembershipByIds).not.toBeCalled();
         expect(boardRepository.updateBoardMembership).not.toBeCalled();
       }
@@ -481,7 +475,7 @@ describe('BoardService', () => {
 
     it('should throw BadRequestException if the member provided is not a participant', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'findBoardMembershipByIds')
@@ -502,10 +496,7 @@ describe('BoardService', () => {
         expect(error.message).toBe(
           'the member provided is not a participant in this board',
         );
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
-          203,
-          152,
-        );
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(203, 152);
         expect(boardRepository.findBoardMembershipByIds).toBeCalledWith(
           152,
           14,
@@ -516,7 +507,7 @@ describe('BoardService', () => {
 
     it('should update member role and return the updated user', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'findBoardMembershipByIds')
@@ -537,10 +528,7 @@ describe('BoardService', () => {
       expect(result).toStrictEqual(
         UserDto.fromUser(mockOwner, BoardRolesEnum.ADMIN),
       );
-      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
-        203,
-        152,
-      );
+      expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(203, 152);
       expect(boardRepository.findBoardMembershipByIds).toBeCalledWith(152, 14);
       expect(boardRepository.updateBoardMembership).toBeCalledWith(
         mockBoardMembership[0].id,
@@ -552,7 +540,7 @@ describe('BoardService', () => {
   describe('initiateBoardDeletion', () => {
     it('should throw ForbiddenException if user is not an admin', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(false);
       jest.spyOn(userService, 'getCurrentUser').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
@@ -568,7 +556,7 @@ describe('BoardService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
           mockOwner.id,
           mockBoards.id,
         );
@@ -581,7 +569,7 @@ describe('BoardService', () => {
 
     it('should sendEmail and return the token', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(userService, 'getCurrentUser')
@@ -604,7 +592,7 @@ describe('BoardService', () => {
       );
 
       expect(result).toStrictEqual('random-token');
-      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+      expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
         mockOwner.id,
         mockBoards.id,
       );
@@ -640,7 +628,7 @@ describe('BoardService', () => {
 
     it('should throw ForbiddenException if user is not an admin', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(false);
 
       jest
@@ -656,7 +644,7 @@ describe('BoardService', () => {
           mockAuthData,
         );
       } catch (error) {
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
           mockOwner.id,
           mockBoardDto.id,
         );
@@ -671,7 +659,7 @@ describe('BoardService', () => {
 
     it('should throw UnauthorizedException if tokens are invalid', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
 
       jest
@@ -692,7 +680,7 @@ describe('BoardService', () => {
           'It was not possible to delete your board',
         );
         expect(prismaService.board.delete).not.toBeCalled();
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
           mockOwner.id,
           mockBoardDto.id,
         );
@@ -706,7 +694,7 @@ describe('BoardService', () => {
 
     it('should delete board successfully', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
 
       jest
@@ -731,7 +719,7 @@ describe('BoardService', () => {
         mockAuthData.token,
         mockAuthData.verificationCode,
       );
-      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+      expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
         mockOwner.id,
         mockBoardDto.id,
       );

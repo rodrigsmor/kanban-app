@@ -11,16 +11,16 @@ import {
 } from '../utils/@types/payloads.type';
 import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
+import { BoardDto } from '../api/board/dto/board.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { BoardRolesEnum } from '../utils/enums/board-roles.enum';
 import { BoardInviteDto } from '../api/board/dto/board-invite.dto';
+import { InviteDataTypes } from '../utils/@types/invite-data.types';
 import { EmailService } from '../utils/config/email-config-service';
 import { BoardInviteService } from '../api/board/board-invite.service';
 import { BoardRepository } from '../common/repositories/board.repository';
 import { InviteRepository } from '../common/repositories/invite.repository';
 import { EncryptConfigService } from '../utils/config/encryption-config-service';
-import { InviteDataTypes } from '../utils/@types/invite-data.types';
-import { BoardDto } from '../api/board/dto/board.dto';
-import { BoardRolesEnum } from '../utils/enums/board-roles.enum';
 
 describe('BoardServiceInvite', () => {
   let prisma: PrismaService;
@@ -115,7 +115,7 @@ describe('BoardServiceInvite', () => {
   describe('inviteUserToBoard', () => {
     it('should throw ForbiddenException if the user is not an admin', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(false);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
       jest
@@ -136,7 +136,7 @@ describe('BoardServiceInvite', () => {
         expect(error.message).toStrictEqual(
           'You are not allowed to add new members to this board',
         );
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
           mockUserId,
           mockBoardInviteDto.boardId,
         );
@@ -153,7 +153,7 @@ describe('BoardServiceInvite', () => {
 
     it('should throw NotFoundException if the board was not found', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest.spyOn(boardRepository, 'findBoardById').mockResolvedValueOnce(null);
       jest
@@ -172,7 +172,7 @@ describe('BoardServiceInvite', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toStrictEqual('the board seems to not to exist');
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
           mockUserId,
           mockBoardInviteDto.boardId,
         );
@@ -192,7 +192,7 @@ describe('BoardServiceInvite', () => {
 
     it('should throw BadRequestException if the user is already a member', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'findBoardById')
@@ -213,7 +213,7 @@ describe('BoardServiceInvite', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toStrictEqual('the user is already a member');
-        expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+        expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
           mockUserId,
           mockBoardInviteDto.boardId,
         );
@@ -234,7 +234,7 @@ describe('BoardServiceInvite', () => {
 
     it('should invite the user and return the token', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfBoardMemberIsAdmin')
+        .spyOn(boardRepository, 'isMemberAdminOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'findBoardById')
@@ -257,7 +257,7 @@ describe('BoardServiceInvite', () => {
       );
 
       expect(result).toStrictEqual('token-encrypted-generated');
-      expect(boardRepository.checkIfBoardMemberIsAdmin).toBeCalledWith(
+      expect(boardRepository.isMemberAdminOfBoard).toBeCalledWith(
         mockUserId,
         mockBoardInviteDto.boardId,
       );
@@ -293,7 +293,7 @@ describe('BoardServiceInvite', () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
       jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockInviteData);
       jest
-        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .spyOn(inviteRepository, 'isInvitePending')
         .mockResolvedValueOnce(null);
       jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
@@ -312,7 +312,7 @@ describe('BoardServiceInvite', () => {
           where: { id: mockUserId },
         });
         expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
-        expect(inviteRepository.checkIfInviteIsPending).not.toBeCalled();
+        expect(inviteRepository.isInvitePending).not.toBeCalled();
         expect(inviteRepository.updateInvite).not.toBeCalled();
         expect(boardRepository.addUserToBoard).not.toBeCalled();
       }
@@ -325,7 +325,7 @@ describe('BoardServiceInvite', () => {
         email: 'wrong.user@mail.com',
       });
       jest
-        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .spyOn(inviteRepository, 'isInvitePending')
         .mockResolvedValueOnce(null);
       jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
@@ -344,7 +344,7 @@ describe('BoardServiceInvite', () => {
           where: { id: mockUserId },
         });
         expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
-        expect(inviteRepository.checkIfInviteIsPending).not.toBeCalled();
+        expect(inviteRepository.isInvitePending).not.toBeCalled();
         expect(inviteRepository.updateInvite).not.toBeCalled();
         expect(boardRepository.addUserToBoard).not.toBeCalled();
       }
@@ -359,7 +359,7 @@ describe('BoardServiceInvite', () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
       jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockExpiredInviteData);
       jest
-        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .spyOn(inviteRepository, 'isInvitePending')
         .mockResolvedValueOnce(null);
       jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
@@ -376,7 +376,7 @@ describe('BoardServiceInvite', () => {
           where: { id: mockUserId },
         });
         expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
-        expect(inviteRepository.checkIfInviteIsPending).not.toBeCalled();
+        expect(inviteRepository.isInvitePending).not.toBeCalled();
         expect(inviteRepository.updateInvite).not.toBeCalled();
         expect(boardRepository.addUserToBoard).not.toBeCalled();
       }
@@ -386,7 +386,7 @@ describe('BoardServiceInvite', () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
       jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockInviteData);
       jest
-        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .spyOn(inviteRepository, 'isInvitePending')
         .mockResolvedValueOnce(false);
       jest.spyOn(inviteRepository, 'updateInvite').mockResolvedValueOnce(null);
       jest.spyOn(boardRepository, 'addUserToBoard').mockResolvedValueOnce(null);
@@ -405,7 +405,7 @@ describe('BoardServiceInvite', () => {
           where: { id: mockUserId },
         });
         expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
-        expect(inviteRepository.checkIfInviteIsPending).toBeCalledWith(
+        expect(inviteRepository.isInvitePending).toBeCalledWith(
           mockInviteData.inviteId,
         );
         expect(inviteRepository.updateInvite).not.toBeCalled();
@@ -417,7 +417,7 @@ describe('BoardServiceInvite', () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser);
       jest.spyOn(crypt, 'decrypt').mockResolvedValueOnce(mockInviteData);
       jest
-        .spyOn(inviteRepository, 'checkIfInviteIsPending')
+        .spyOn(inviteRepository, 'isInvitePending')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(inviteRepository, 'updateInvite')
@@ -436,7 +436,7 @@ describe('BoardServiceInvite', () => {
         where: { id: mockUserId },
       });
       expect(crypt.decrypt).toBeCalledWith('token-encrypted-generated');
-      expect(inviteRepository.checkIfInviteIsPending).toBeCalledWith(
+      expect(inviteRepository.isInvitePending).toBeCalledWith(
         mockInviteData.inviteId,
       );
       expect(inviteRepository.updateInvite).toBeCalledWith(
