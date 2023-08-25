@@ -1,2 +1,2 @@
-export * from './delete-file-path';
+export * from './file-functions';
 export * from './get-amount-of-cards';
