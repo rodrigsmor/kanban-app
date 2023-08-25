@@ -1,12 +1,19 @@
 import * as fs from 'fs';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { EditUserDto, UserDto } from './dto';
-import { deleteFilePath } from '../../utils/functions';
+import { FileFunctions } from '../../utils/functions';
 import { PrismaService } from '../../prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fileFunctions: FileFunctions,
+  ) {}
 
   async getCurrentUser(userId: number): Promise<UserDto> {
     const user = await this.prisma.user.findUnique({
@@ -48,7 +55,13 @@ export class UserService {
     const newPicturePath = `${picture.path}`;
 
     if (user.profilePicture && fs.existsSync(user.profilePicture)) {
-      await deleteFilePath(user.profilePicture);
+      try {
+        await this.fileFunctions.deleteFilePath(user.profilePicture);
+      } catch (error) {
+        throw new InternalServerErrorException(
+          'It was not possible to update your profile picture. Try again later.',
+        );
+      }
     }
 
     const userUpdated = await this.prisma.user.update({

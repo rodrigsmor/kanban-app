@@ -1,6 +1,7 @@
 import * as fs from 'fs';
-import { InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
+@Injectable()
 export class FileFunctions {
   async deleteFilePath(filePath: string): Promise<void> {
     try {
