@@ -27,7 +27,7 @@ export class BoardInviteService {
     userId: number,
     boardInviteDto: BoardInviteDto,
   ): Promise<string> {
-    const isAdmin = await this.boardRepository.checkIfBoardMemberIsAdmin(
+    const isAdmin = await this.boardRepository.isMemberAdminOfBoard(
       userId,
       boardInviteDto.boardId,
     );
@@ -103,7 +103,7 @@ export class BoardInviteService {
       throw new ForbiddenException('the invitation has expired');
     }
 
-    const isPending = await this.inviteRepository.checkIfInviteIsPending(
+    const isPending = await this.inviteRepository.isInvitePending(
       inviteData.inviteId,
     );
 
