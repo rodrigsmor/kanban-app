@@ -52,7 +52,7 @@ export class InviteRepository {
     });
   }
 
-  async checkIfInviteIsPending(inviteId: number): Promise<boolean> {
+  async isInvitePending(inviteId: number): Promise<boolean> {
     const invite = await this.prisma.boardInvite.findUnique({
       where: { id: inviteId },
     });
