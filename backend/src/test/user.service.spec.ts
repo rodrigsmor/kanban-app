@@ -1,27 +1,33 @@
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
+import { UserDto } from '../api/user/dto/user.dto';
 import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserDto } from '../api/user/dto/user.dto';
-import { BadRequestException } from '@nestjs/common';
 import { EditUserDto } from '../api/user/dto/edit-user.dto';
 
 import * as fs from 'fs';
 import { Readable } from 'stream';
+import { FileService } from '../utils/config/file-service';
 
 describe('UserService', () => {
   let userService: UserService;
+  let fileService: FileService;
   let prismaService: PrismaService;
 
   const password = bcrypt.hashSync('test-password', 10);
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [UserService, PrismaService],
+      providers: [UserService, PrismaService, FileService],
     }).compile();
 
     userService = moduleRef.get<UserService>(UserService);
+    fileService = moduleRef.get<FileService>(FileService);
     prismaService = moduleRef.get<PrismaService>(PrismaService);
   });
 
@@ -160,9 +166,9 @@ describe('UserService', () => {
       jest
         .spyOn(userService, 'getCurrentUser')
         .mockResolvedValueOnce(mockUserDto);
+      jest.spyOn(fileService, 'deleteFilePath').mockResolvedValueOnce(null);
 
       jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
-      jest.spyOn(fs, 'unlinkSync').mockImplementationOnce(() => null);
 
       jest
         .spyOn(prismaService.user, 'update')
@@ -172,13 +178,51 @@ describe('UserService', () => {
 
       expect(userService.getCurrentUser).toHaveBeenCalledWith(0);
       expect(fs.existsSync).not.toBeCalled();
-      expect(fs.unlinkSync).not.toHaveBeenCalled();
+      expect(fileService.deleteFilePath).not.toBeCalled();
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: 0 },
         data: { profilePicture: newPicture.path },
       });
 
       expect(result).toEqual(UserDto.fromUser(updatedUser));
+    });
+
+    it('should throw InternalServerError if an error occurs while deleting file', async () => {
+      const userWithProfilePicture: UserDto = {
+        ...mockUserDto,
+        profilePicture: 'old-profile-picture-path',
+      };
+
+      jest
+        .spyOn(userService, 'getCurrentUser')
+        .mockResolvedValueOnce(userWithProfilePicture);
+      jest
+        .spyOn(fileService, 'deleteFilePath')
+        .mockRejectedValueOnce(
+          new InternalServerErrorException('error while deleting file.'),
+        );
+      jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValueOnce(updatedUser);
+
+      try {
+        await userService.updateProfilePicture(0, newPicture);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'It was not possible to update your profile picture. Try again later.',
+        );
+        expect(userService.getCurrentUser).toHaveBeenCalledWith(0);
+        expect(fileService.deleteFilePath).toBeCalledWith(
+          userWithProfilePicture.profilePicture,
+        );
+        expect(fs.existsSync).toHaveBeenCalledWith(
+          userWithProfilePicture.profilePicture,
+        );
+        expect(prismaService.user.update).not.toBeCalled();
+      }
     });
 
     it('should delete the old file if there is already a saved profile picture', async () => {
@@ -190,9 +234,8 @@ describe('UserService', () => {
       jest
         .spyOn(userService, 'getCurrentUser')
         .mockResolvedValueOnce(userWithProfilePicture);
-
+      jest.spyOn(fileService, 'deleteFilePath').mockResolvedValueOnce(null);
       jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
-      jest.spyOn(fs, 'unlinkSync').mockImplementationOnce(() => null);
 
       jest
         .spyOn(prismaService.user, 'update')
@@ -201,10 +244,10 @@ describe('UserService', () => {
       const result = await userService.updateProfilePicture(0, newPicture);
 
       expect(userService.getCurrentUser).toHaveBeenCalledWith(0);
-      expect(fs.existsSync).toHaveBeenCalledWith(
+      expect(fileService.deleteFilePath).toBeCalledWith(
         userWithProfilePicture.profilePicture,
       );
-      expect(fs.unlinkSync).toHaveBeenCalledWith(
+      expect(fs.existsSync).toHaveBeenCalledWith(
         userWithProfilePicture.profilePicture,
       );
       expect(prismaService.user.update).toHaveBeenCalledWith({
