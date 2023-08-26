@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { BoardPrismaType } from '../utils/@types';
-import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ColumnDto } from '../api/column/dto/column.dto';
 import { ColumnService } from '../api/column/column.service';
+import { FileService } from '../utils/config/file-service';
 import { EditColumnDto } from '../api/column/dto/edit-column.dto';
 import { CreateColumnDto } from '../api/column/dto/create-column.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { ColumnDto } from '../api/column/dto/column.dto';
+import { UserService } from '../api/user/user.service';
 
 describe('ColumnService', () => {
   let userService: UserService;
@@ -22,7 +23,13 @@ describe('ColumnService', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [PrismaService, ColumnService, UserService, BoardRepository],
+      providers: [
+        PrismaService,
+        ColumnService,
+        UserService,
+        BoardRepository,
+        FileService,
+      ],
     }).compile();
 
     userService = moduleRef.get<UserService>(UserService);

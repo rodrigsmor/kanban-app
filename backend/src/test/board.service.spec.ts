@@ -25,6 +25,7 @@ import { BoardCreateDto } from '../api/board/dto/board-create.dto';
 import { EmailService } from '../utils/config/email-config-service';
 import { BoardSummaryDto } from '../api/board/dto/board-summary.dto';
 import { BoardRepository } from '../common/repositories/board.repository';
+import { FileService } from '../utils/config/file-service';
 
 describe('BoardService', () => {
   let userService: UserService;
@@ -147,6 +148,7 @@ describe('BoardService', () => {
         EmailService,
         TwoFactorService,
         JwtService,
+        FileService,
       ],
     }).compile();
 

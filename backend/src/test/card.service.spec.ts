@@ -9,7 +9,6 @@ import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
 import { CardDto } from '../api/card/dto/card.dto';
 import { CardService } from '../api/card/card.service';
-import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EditCardDto } from '../api/card/dto/edit.card.dto';
 import { CardPrismaType } from '../utils/@types/payloads.type';
