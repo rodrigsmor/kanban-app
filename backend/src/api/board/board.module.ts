@@ -14,6 +14,7 @@ import { BoardRepository, InviteRepository } from '../../common/repositories';
 import { EncryptConfigService } from '../../utils/config/encryption-config-service';
 import { EmailService } from '../../utils/config/email-config-service';
 import { TwoFactorService } from '../../auth/two-factor.service';
+import { FileService } from '../../utils/config/file-service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TwoFactorService } from '../../auth/two-factor.service';
   ],
   controllers: [BoardController, BoardInviteController],
   providers: [
+    FileService,
     BoardService,
     UserService,
     AuthService,

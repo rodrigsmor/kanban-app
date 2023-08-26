@@ -10,6 +10,7 @@ import { BoardRepository } from '../../common/repositories/board.repository';
 import { AuthService } from '../../auth/auth.service';
 import { AuthMiddleware } from '../../utils/middlewares/auth.middleware';
 import { CardRepository } from '../../common/repositories/card.repository';
+import { FileService } from '../../utils/config/file-service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CardRepository } from '../../common/repositories/card.repository';
     AuthService,
     BoardRepository,
     CardRepository,
+    FileService,
   ],
 })
 export class CardModule implements NestModule {
