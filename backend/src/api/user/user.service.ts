@@ -5,14 +5,14 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { EditUserDto, UserDto } from './dto';
-import { FileFunctions } from '../../utils/functions';
+import { FileService } from '../../utils/config/file-service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly fileFunctions: FileFunctions,
+    private readonly fileService: FileService,
   ) {}
 
   async getCurrentUser(userId: number): Promise<UserDto> {
@@ -56,7 +56,7 @@ export class UserService {
 
     if (user.profilePicture && fs.existsSync(user.profilePicture)) {
       try {
-        await this.fileFunctions.deleteFilePath(user.profilePicture);
+        await this.fileService.deleteFilePath(user.profilePicture);
       } catch (error) {
         throw new InternalServerErrorException(
           'It was not possible to update your profile picture. Try again later.',
