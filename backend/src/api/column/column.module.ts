@@ -5,6 +5,7 @@ import { AuthService } from '../../auth/auth.service';
 import { ColumnController } from './column.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { FileService } from '../../utils/config/file-service';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthMiddleware } from '../../utils/middlewares/auth.middleware';
 import { BoardRepository } from '../../common/repositories/board.repository';
@@ -24,6 +25,7 @@ import { MulterConfigService } from '../../utils/config/multer-config-service';
     UserService,
     AuthService,
     BoardRepository,
+    FileService,
   ],
 })
 export class ColumnModule implements NestModule {

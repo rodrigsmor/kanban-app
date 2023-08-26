@@ -1,12 +1,19 @@
-import { EditUserDto, UserDto } from './dto';
-import { PrismaService } from '../../prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
-
 import * as fs from 'fs';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { EditUserDto, UserDto } from './dto';
+import { FileService } from '../../utils/config/file-service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fileService: FileService,
+  ) {}
 
   async getCurrentUser(userId: number): Promise<UserDto> {
     const user = await this.prisma.user.findUnique({
@@ -48,7 +55,13 @@ export class UserService {
     const newPicturePath = `${picture.path}`;
 
     if (user.profilePicture && fs.existsSync(user.profilePicture)) {
-      await this.deleteFile(user.profilePicture);
+      try {
+        await this.fileService.deleteFilePath(user.profilePicture);
+      } catch (error) {
+        throw new InternalServerErrorException(
+          'It was not possible to update your profile picture. Try again later.',
+        );
+      }
     }
 
     const userUpdated = await this.prisma.user.update({
@@ -57,14 +70,5 @@ export class UserService {
     });
 
     return UserDto.fromUser(userUpdated);
-  }
-
-  async deleteFile(filePath: string): Promise<void> {
-    try {
-      fs.unlinkSync(filePath);
-      console.log('it was deleted :)');
-    } catch (err) {
-      console.log('Was not possible to delete your file');
-    }
   }
 }

@@ -1,8 +1,8 @@
 import { UserDto } from '../../user/dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { BoardRolesEnum } from 'src/utils/enums';
-import { ColumnType } from '../../../utils/@types';
 import { BoardPrismaType } from '../../../utils/@types/payloads.type';
+import { ColumnDto } from '../../column/dto/column.dto';
 
 export class BoardDto {
   @ApiProperty({
@@ -48,7 +48,7 @@ export class BoardDto {
     isArray: true,
     description: 'a list of the column of this board',
   })
-  columns: ColumnType[];
+  columns: ColumnDto[];
 
   @ApiProperty({
     description: 'the user who owns this board.',
@@ -69,7 +69,7 @@ export class BoardDto {
     this.isPinned = board.isPinned;
     this.createdAt = board.createdAt;
     this.updateAt = board.updateAt;
-    this.columns = board.columns.map((column) => new ColumnType(column));
+    this.columns = board.columns.map((column) => new ColumnDto(column));
     this.owner = UserDto.fromUser(board.owner);
     this.members = board.members.map(({ user, role }) =>
       UserDto.fromUser(user, role as BoardRolesEnum),

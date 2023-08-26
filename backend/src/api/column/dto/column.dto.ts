@@ -1,9 +1,8 @@
-import { Card } from '@prisma/client';
-import { ColumnPrismaType } from './';
 import { ApiProperty } from '@nestjs/swagger';
-import { CardSummaryDto } from '../../api/card/dto/card-summary.dto';
+import { CardSummaryDto } from '../../card/dto/card-summary.dto';
+import { ColumnPrismaType } from '../../../utils/@types/payloads.type';
 
-export class ColumnType {
+export class ColumnDto {
   @ApiProperty({
     description: 'the id of the column',
   })

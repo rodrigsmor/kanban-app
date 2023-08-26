@@ -83,11 +83,13 @@ export class CardController {
   async addAssigneeToCard(
     @UserId() userId: number,
     @Query('boardId') boardId: number,
+    @Param('cardId') cardId: number,
     @Body() assigneesIds: CardAssigneesDto,
   ): Promise<CardDto> {
-    return this.cardService.addAssigneeToCard(
+    return this.cardService.addAssigneesToCard(
       userId,
       boardId,
+      cardId,
       assigneesIds.assigneesIds,
     );
   }

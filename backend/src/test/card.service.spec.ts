@@ -9,7 +9,6 @@ import { User } from '@prisma/client';
 import { Test } from '@nestjs/testing';
 import { CardDto } from '../api/card/dto/card.dto';
 import { CardService } from '../api/card/card.service';
-import { UserService } from '../api/user/user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EditCardDto } from '../api/card/dto/edit.card.dto';
 import { CardPrismaType } from '../utils/@types/payloads.type';
@@ -137,10 +136,10 @@ describe('CardService', () => {
   describe('createCard', () => {
     it('should throw ForbiddenException if member has no permission to edit', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(false);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'createCard').mockResolvedValueOnce(null);
 
@@ -151,25 +150,25 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
+        expect(boardRepository.isColumnPartOfBoard).not.toBeCalled();
         expect(cardRepository.createCard).not.toBeCalled();
       }
     });
 
     it('should throw an UnauthorizedException if the provided member is not a board member', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockRejectedValueOnce(
           new UnauthorizedException(
             'the user provided is not a member of this board',
           ),
         );
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'createCard').mockResolvedValueOnce(null);
 
@@ -180,21 +179,21 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the user provided is not a member of this board',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
+        expect(boardRepository.isColumnPartOfBoard).not.toBeCalled();
         expect(cardRepository.createCard).not.toBeCalled();
       }
     });
 
     it('should throw a NotFoundException if column does not belong to given board', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(false);
       jest.spyOn(cardRepository, 'createCard').mockResolvedValueOnce(null);
 
@@ -205,11 +204,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the column provided does not seem to exist',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
           mockBoardId,
           mockColumnId,
         );
@@ -219,10 +218,10 @@ describe('CardService', () => {
 
     it('should throw an InternalServerException if an error occurs while creating the card', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(cardRepository, 'createCard')
@@ -239,11 +238,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'There was a problem creating your new card. Please try again later.',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
           mockBoardId,
           mockColumnId,
         );
@@ -253,10 +252,10 @@ describe('CardService', () => {
 
     it('should create a new card and return it', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(cardRepository, 'createCard')
@@ -269,11 +268,11 @@ describe('CardService', () => {
       );
 
       expect(result).toStrictEqual(mockCardDto);
-      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
       );
-      expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+      expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
         mockBoardId,
         mockColumnId,
       );
@@ -302,13 +301,13 @@ describe('CardService', () => {
 
     it('should throw ForbiddenException if member has no permission to edit', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(false);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(null);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
 
@@ -319,29 +318,29 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isColumnPartOfBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(cardRepository.editCard).not.toBeCalled();
       }
     });
 
     it('should throw UnauthorizedException if the provided member is not a board member', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockRejectedValueOnce(
           new UnauthorizedException(
             'the user provided is not a member of this board',
           ),
         );
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(null);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
 
@@ -352,25 +351,25 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the user provided is not a member of this board',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).not.toBeCalled();
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isColumnPartOfBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(cardRepository.editCard).not.toBeCalled();
       }
     });
 
     it('should throw NotFoundException if column does not belong to given board', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(false);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
 
@@ -381,28 +380,28 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the column provided does not seem to exist',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
           mockBoardId,
           mockColumnId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(cardRepository.editCard).not.toBeCalled();
       }
     });
 
     it('should throw NotFoundException if card does not belong to given board', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(false);
       jest.spyOn(cardRepository, 'editCard').mockResolvedValueOnce(null);
 
@@ -413,15 +412,15 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the card provided does not seem to exist',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
           mockBoardId,
           mockColumnId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockEditCard.cardId,
         );
@@ -431,13 +430,13 @@ describe('CardService', () => {
 
     it('should throw an InternalServerException if an error occurs while updating the card', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(cardRepository, 'editCard')
@@ -454,15 +453,15 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'There was a problem creating your new card. Please try again later.',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+        expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
           mockBoardId,
           mockColumnId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockEditCard.cardId,
         );
@@ -472,13 +471,13 @@ describe('CardService', () => {
 
     it('should update the card and return it', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfColumnBelongsToBoard')
+        .spyOn(boardRepository, 'isColumnPartOfBoard')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(cardRepository, 'editCard')
@@ -491,15 +490,15 @@ describe('CardService', () => {
       );
 
       expect(result).toStrictEqual(mockCardDtoUpdated);
-      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
       );
-      expect(boardRepository.checkIfColumnBelongsToBoard).toBeCalledWith(
+      expect(boardRepository.isColumnPartOfBoard).toBeCalledWith(
         mockBoardId,
         mockColumnId,
       );
-      expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+      expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
         mockBoardId,
         mockEditCard.cardId,
       );
@@ -558,10 +557,10 @@ describe('CardService', () => {
 
     it('should throw ForbiddenException if user has no permission to edit', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(false);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'areUsersMembersOfBoard')
@@ -582,11 +581,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(boardRepository.areUsersMembersOfBoard).not.toBeCalled();
         expect(cardRepository.addAssigneesToCard).not.toBeCalled();
       }
@@ -594,12 +593,12 @@ describe('CardService', () => {
 
     it('should throw UnauthorizedException if user is not a board member', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockRejectedValueOnce(
           new UnauthorizedException('You are not a member of this board'),
         );
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'areUsersMembersOfBoard')
@@ -620,11 +619,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'You are not a member of this board',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(boardRepository.areUsersMembersOfBoard).not.toBeCalled();
         expect(cardRepository.addAssigneesToCard).not.toBeCalled();
       }
@@ -632,10 +631,10 @@ describe('CardService', () => {
 
     it('should throw NotFoundException if the provided card is not a board card', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(false);
       jest
         .spyOn(boardRepository, 'areUsersMembersOfBoard')
@@ -656,11 +655,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the card provided does not seem to exist',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockCardDto.id,
         );
@@ -671,10 +670,10 @@ describe('CardService', () => {
 
     it('should throw BadRequestException if any of the provided assignees Ids are not board members', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'areUsersMembersOfBoard')
@@ -695,11 +694,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'some of the members provided do not seem to exist.',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockCardDto.id,
         );
@@ -713,10 +712,10 @@ describe('CardService', () => {
 
     it('should throw InternalServerException if an error occurs while adding assignees to card', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'areUsersMembersOfBoard')
@@ -741,11 +740,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'There was a problem adding new assignees to card. Please try again later.',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockCardDto.id,
         );
@@ -762,10 +761,10 @@ describe('CardService', () => {
 
     it('should add new assignees to card and return the card updated', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(boardRepository, 'areUsersMembersOfBoard')
@@ -782,11 +781,11 @@ describe('CardService', () => {
       );
 
       expect(result).toStrictEqual(new CardDto(mockCardWithNewAssignees));
-      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
       );
-      expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+      expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
         mockBoardId,
         mockCardDto.id,
       );
@@ -809,10 +808,10 @@ describe('CardService', () => {
 
     it('should throw ForbiddenException if member has no permission to edit', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(false);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'updateCardCover').mockResolvedValueOnce(null);
 
@@ -828,25 +827,25 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'you do not have permission to perform this action',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(cardRepository.updateCardCover).not.toBeCalled();
       }
     });
 
     it('should throw UnauthorizedException if the provided member is not a board member', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockRejectedValueOnce(
           new UnauthorizedException(
             'the user provided is not a member of this board',
           ),
         );
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(null);
       jest.spyOn(cardRepository, 'updateCardCover').mockResolvedValueOnce(null);
 
@@ -862,21 +861,21 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the user provided is not a member of this board',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).not.toBeCalled();
+        expect(boardRepository.isCardPresentOnBoard).not.toBeCalled();
         expect(cardRepository.updateCardCover).not.toBeCalled();
       }
     });
 
     it('should throw NotFoundException if card does not belong to given board', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(false);
       jest.spyOn(cardRepository, 'updateCardCover').mockResolvedValueOnce(null);
 
@@ -892,11 +891,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'the card provided does not seem to exist',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockCardDto.id,
         );
@@ -906,10 +905,10 @@ describe('CardService', () => {
 
     it('should throw an InternalServerException if an error occurs while changing the card cover', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(cardRepository, 'updateCardCover')
@@ -931,11 +930,11 @@ describe('CardService', () => {
         expect(error.message).toStrictEqual(
           'There was a problem changing the cover card. Please try again later.',
         );
-        expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
           mockUserId,
           mockBoardId,
         );
-        expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+        expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
           mockBoardId,
           mockCardDto.id,
         );
@@ -948,10 +947,10 @@ describe('CardService', () => {
 
     it('should update card cover and return it', async () => {
       jest
-        .spyOn(boardRepository, 'checkIfMemberHasPermissionToEdit')
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(true);
       jest
-        .spyOn(boardRepository, 'checkIfCardExistsOnBoard')
+        .spyOn(boardRepository, 'isCardPresentOnBoard')
         .mockResolvedValueOnce(true);
       jest
         .spyOn(cardRepository, 'updateCardCover')
@@ -965,11 +964,11 @@ describe('CardService', () => {
       );
 
       expect(result).toStrictEqual(new CardDto(mockCardCoverPrismaPayload));
-      expect(boardRepository.checkIfMemberHasPermissionToEdit).toBeCalledWith(
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
         mockUserId,
         mockBoardId,
       );
-      expect(boardRepository.checkIfCardExistsOnBoard).toBeCalledWith(
+      expect(boardRepository.isCardPresentOnBoard).toBeCalledWith(
         mockBoardId,
         mockCardDto.id,
       );

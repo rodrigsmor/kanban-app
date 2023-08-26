@@ -5,9 +5,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ColumnType } from '../../utils/@types';
 import { UserService } from '../user/user.service';
-import { CreateColumnDto, EditColumnDto } from './dto';
+import { ColumnDto, CreateColumnDto, EditColumnDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BoardRepository } from '../../common/repositories/board.repository';
 
@@ -23,20 +22,17 @@ export class ColumnService {
     userId: number,
     boardId: number,
     columnData: CreateColumnDto,
-  ): Promise<ColumnType[]> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+  ): Promise<ColumnDto[]> {
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
       );
 
     const isColumnIndexRepeated =
-      await this.boardRepository.checkIfColumnIndexIsRepeated(
+      await this.boardRepository.hasDuplicateColumnIndex(
         boardId,
         columnData.columnIndex,
       );
@@ -62,8 +58,8 @@ export class ColumnService {
 
     const board = await this.boardRepository.findBoardById(boardId, userId);
 
-    const columns: ColumnType[] = board.columns.map(
-      (column) => new ColumnType(column),
+    const columns: ColumnDto[] = board.columns.map(
+      (column) => new ColumnDto(column),
     );
 
     return columns;
@@ -73,21 +69,18 @@ export class ColumnService {
     userId: number,
     boardId: number,
     columnData: EditColumnDto,
-  ): Promise<ColumnType[]> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+  ): Promise<ColumnDto[]> {
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
       );
 
     if (columnData?.columnIndex) {
       const isColumnIndexRepeated =
-        await this.boardRepository.checkIfColumnIndexIsRepeated(
+        await this.boardRepository.hasDuplicateColumnIndex(
           boardId,
           columnData.columnIndex,
         );
@@ -98,13 +91,12 @@ export class ColumnService {
         );
     }
 
-    const belongsToColumn =
-      await this.boardRepository.checkIfColumnBelongsToBoard(
-        boardId,
-        columnData.columnId,
-      );
+    const columnExistsOnBoard = await this.boardRepository.isColumnPartOfBoard(
+      boardId,
+      columnData.columnId,
+    );
 
-    if (!belongsToColumn)
+    if (!columnExistsOnBoard)
       throw new NotFoundException('this column does not seem to exist');
 
     try {
@@ -125,8 +117,8 @@ export class ColumnService {
 
     const board = await this.boardRepository.findBoardById(boardId, userId);
 
-    const columns: ColumnType[] = board.columns.map(
-      (column) => new ColumnType(column),
+    const columns: ColumnDto[] = board.columns.map(
+      (column) => new ColumnDto(column),
     );
 
     return columns;
@@ -136,22 +128,21 @@ export class ColumnService {
     userId: number,
     boardId: number,
     columnId: number,
-  ): Promise<ColumnType[]> {
-    const hasPermission =
-      await this.boardRepository.checkIfMemberHasPermissionToEdit(
-        userId,
-        boardId,
-      );
+  ): Promise<ColumnDto[]> {
+    const hasPermissionToEdit =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
 
-    if (!hasPermission)
+    if (!hasPermissionToEdit)
       throw new UnauthorizedException(
         'you do not have permission to perform this action',
       );
 
-    const belongsToColumn =
-      await this.boardRepository.checkIfColumnBelongsToBoard(boardId, columnId);
+    const columnExistsOnBoard = await this.boardRepository.isColumnPartOfBoard(
+      boardId,
+      columnId,
+    );
 
-    if (!belongsToColumn)
+    if (!columnExistsOnBoard)
       throw new NotFoundException('this column does not seem to exist');
 
     try {
@@ -166,8 +157,8 @@ export class ColumnService {
 
     const board = await this.boardRepository.findBoardById(boardId, userId);
 
-    const columns: ColumnType[] = board.columns.map(
-      (column) => new ColumnType(column),
+    const columns: ColumnDto[] = board.columns.map(
+      (column) => new ColumnDto(column),
     );
 
     return columns;
