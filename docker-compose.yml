@@ -24,6 +24,8 @@ services:
       ENCRYPT_SALT: ${ENCRYPT_SALT}
     ports:
       - "${API_PORT}:3000"
+    volumes:
+      - /uploads
     depends_on:
       - db
       
