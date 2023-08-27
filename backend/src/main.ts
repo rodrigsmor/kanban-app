@@ -1,3 +1,4 @@
+import * as express from 'express';
 import { AppModule } from './app.module';
 import { NestFactory } from '@nestjs/core';
 import { json, urlencoded } from 'express';
@@ -30,6 +31,8 @@ async function bootstrap() {
   app.use(json({ limit: '100mb' }));
   app.use(urlencoded({ limit: '100mb', extended: true }));
   app.useGlobalFilters(new GlobalExecptionFilter());
+
+  app.use('/uploads', express.static('uploads'));
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
