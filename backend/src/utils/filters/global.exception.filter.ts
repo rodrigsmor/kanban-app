@@ -20,13 +20,14 @@ export const getErrorMessage = (exception: unknown): string => {
 
 @Catch()
 export class GlobalExecptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: any, host: ArgumentsHost) {
     const context = host.switchToHttp();
     const response = context.getResponse<Response>();
     const request = context.getRequest<IncomingMessage>();
     const code = getStatusCode(exception);
     const except = getErrorMessage(exception).split(': ')[0];
-    const message = getErrorMessage(exception).split(': ')[1];
+    const message =
+      exception?.response?.message ?? getErrorMessage(exception).split(': ')[1];
 
     response.status(code).json({
       timestamp: new Date().toISOString(),

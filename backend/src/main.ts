@@ -11,7 +11,7 @@ async function bootstrap() {
     bodyParser: true,
   });
 
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ transform: false }));
 
   const config = new DocumentBuilder()
     .setTitle('Kanban Application')
