@@ -56,9 +56,15 @@ export class TwoFactorService {
     token: string,
     code: string,
   ): Promise<JwtPayload> {
-    const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
-      secret: `${this.jwtSecret}-2Fa`,
-    });
+    const payload: JwtPayload = await this.jwtService
+      .verifyAsync(token, {
+        secret: `${this.jwtSecret}-2Fa`,
+      })
+      .catch((error) => {
+        throw new UnauthorizedException(
+          error?.message || 'the code provided is expired',
+        );
+      });
 
     if (userId !== payload.sub)
       throw new ForbiddenException(
