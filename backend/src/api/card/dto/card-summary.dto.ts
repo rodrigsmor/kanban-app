@@ -95,9 +95,9 @@ export class CardSummaryDto {
     this.columnId = card.columnId;
     this.updateAt = card.updateAt;
     this.createdAt = card.createdAt;
-    this.numberOfComments = card.comments.length;
-    this.amountOfAttachments = card.attachments.length;
-    this.labels = card.labels.map(({ label }) => new LabelDto(label));
-    this.assignees = card.assignees.map(({ user }) => UserDto.fromUser(user));
+    this.numberOfComments = card?.comments?.length ?? 0;
+    this.amountOfAttachments = card?.attachments?.length ?? 0;
+    this.labels = card?.labels?.map(({ label }) => new LabelDto(label));
+    this.assignees = card?.assignees?.map(({ user }) => UserDto.fromUser(user));
   }
 }

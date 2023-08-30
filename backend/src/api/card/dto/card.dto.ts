@@ -93,7 +93,8 @@ export class CardDto {
     this.columnId = card.columnId;
     this.updateAt = card.updateAt;
     this.createdAt = card.createdAt;
-    this.labels = card.labels.map(({ label }) => new LabelDto(label));
-    this.assignees = card.assignees.map(({ user }) => UserDto.fromUser(user));
+    this.description = card.description;
+    this.labels = card?.labels?.map(({ label }) => new LabelDto(label));
+    this.assignees = card?.assignees?.map(({ user }) => UserDto.fromUser(user));
   }
 }
