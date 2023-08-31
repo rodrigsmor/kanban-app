@@ -6,6 +6,8 @@ import { UserModule } from './api/user/user.module';
 import { BoardModule } from './api/board/board.module';
 import { PrismaService } from './prisma/prisma.service';
 import { ColumnModule } from './api/column/column.module';
+import { LabelController } from './api/label/label.controller';
+import { LabelModule } from './api/label/label.module';
 
 @Module({
   imports: [
@@ -15,8 +17,9 @@ import { ColumnModule } from './api/column/column.module';
     BoardModule,
     ColumnModule,
     CardModule,
+    LabelModule,
   ],
-  controllers: [],
+  controllers: [LabelController],
   providers: [PrismaService],
 })
 export class AppModule {}
