@@ -15,12 +15,6 @@ export class ColumnDto {
   title: string;
 
   @ApiProperty({
-    example: '/images/column-cover-example.png',
-    description: 'the path to the card cover',
-  })
-  cover: string;
-
-  @ApiProperty({
     description: 'the date this board was created.',
   })
   createdAt: Date;
@@ -64,7 +58,6 @@ export class ColumnDto {
   constructor(column: ColumnPrismaType) {
     this.id = column.id;
     this.title = column.title;
-    this.cover = column.cover;
     this.cards = column.cards.map((card) => new CardSummaryDto(card));
     this.updateAt = column.updateAt;
     this.createdAt = column.createdAt;
