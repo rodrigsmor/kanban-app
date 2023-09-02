@@ -14,7 +14,7 @@ describe('LabelService', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      providers: [PrismaService, BoardRepository],
+      providers: [PrismaService, LabelService, BoardRepository],
     }).compile();
 
     labelService = moduleRef.get<LabelService>(LabelService);
