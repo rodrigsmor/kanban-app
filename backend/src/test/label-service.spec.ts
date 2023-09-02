@@ -117,8 +117,64 @@ describe('LabelService', () => {
   });
 
   describe('createLabel', () => {
-    it('', async () => {
-      console.log('');
+    it('should throw UnauthorizedException if the current user is has no permission to edit', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(prismaService.label, 'create').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.createLabel(
+          mockUserId,
+          mockBoardId,
+          mockCreateCardDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'you do not have authorization to edit this board',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.create).not.toBeCalled();
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if the current user is not a member of the board ', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockRejectedValueOnce(
+          new Error('the user provided is not a member of this board'),
+        );
+      jest.spyOn(prismaService.label, 'create').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.createLabel(
+          mockUserId,
+          mockBoardId,
+          mockCreateCardDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'the user provided is not a member of this board',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.create).not.toBeCalled();
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
     });
   });
 });
