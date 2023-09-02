@@ -75,6 +75,7 @@ describe('LabelService', () => {
         );
         expect(boardRepository.areUsersMembersOfBoard).toBeCalledWith(
           mockUserIdArray,
+          mockBoardId,
         );
         expect(boardRepository.findBoardLabels).not.toBeCalled();
       }
@@ -91,6 +92,7 @@ describe('LabelService', () => {
       expect(result).toStrictEqual([]);
       expect(boardRepository.areUsersMembersOfBoard).toBeCalledWith(
         mockUserIdArray,
+        mockBoardId,
       );
       expect(boardRepository.findBoardLabels).toBeCalledWith(mockBoardId);
     });
@@ -108,8 +110,15 @@ describe('LabelService', () => {
       expect(result).toStrictEqual(mockLabelsDto);
       expect(boardRepository.areUsersMembersOfBoard).toBeCalledWith(
         mockUserIdArray,
+        mockBoardId,
       );
       expect(boardRepository.findBoardLabels).toBeCalledWith(mockBoardId);
+    });
+  });
+
+  describe('createLabel', () => {
+    it('', async () => {
+      console.log('');
     });
   });
 });
