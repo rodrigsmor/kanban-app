@@ -5,7 +5,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { Label } from '@prisma/client';
 import { LabelDto } from '../api/card/dto';
-import { CreateLabelDto } from '../api/label/dto';
+import { CreateLabelDto, EditLabelDto } from '../api/label/dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LabelService } from '../api/label/label.service';
 import { BoardRepository } from '../common/repositories/board.repository';
@@ -251,6 +251,138 @@ describe('LabelService', () => {
         },
       });
       expect(boardRepository.findBoardLabels).toBeCalledWith(mockBoardId);
+    });
+  });
+
+  describe('editLabel', () => {
+    const mockNewLabelData: EditLabelDto = {
+      color: '#cc0e83',
+      name: 'new label test',
+    };
+
+    it('should throw UnauthorizedException if user has no permission to edit', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(prismaService.label, 'update').mockResolvedValueOnce(null);
+
+      try {
+        await labelService.editLabel(
+          mockUserId,
+          mockLabelId,
+          mockBoardId,
+          mockNewLabelData,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'you do not have authorization to edit this board',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.update).not.toBeCalled();
+      }
+    });
+
+    it('should throw UnauthorizedException if user is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
+        );
+      jest.spyOn(prismaService.label, 'update').mockResolvedValueOnce(null);
+
+      try {
+        await labelService.editLabel(
+          mockUserId,
+          mockLabelId,
+          mockBoardId,
+          mockNewLabelData,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'the user provided is not a member of this board',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.update).not.toBeCalled();
+      }
+    });
+
+    it('should throw InternalServerException if an error occurr while updating the label', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(prismaService.label, 'update')
+        .mockRejectedValueOnce(new Error(''));
+
+      try {
+        await labelService.editLabel(
+          mockUserId,
+          mockLabelId,
+          mockBoardId,
+          mockNewLabelData,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'An error occurred while updating the label, please try again later',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.update).toHaveBeenCalledWith({
+          where: { id: mockLabelId },
+          data: {
+            color: mockNewLabelData.color,
+            name: mockNewLabelData.name,
+          },
+        });
+      }
+    });
+
+    it('should throw InternalServerException if an error occurr while updating the label', async () => {
+      const mockLabelUpdated: Label = {
+        ...mockNewLabelData,
+        id: 39393933993,
+        boardId: mockBoardId,
+      };
+
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(prismaService.label, 'update')
+        .mockResolvedValueOnce(mockLabelUpdated);
+
+      const result = await labelService.editLabel(
+        mockUserId,
+        mockLabelId,
+        mockBoardId,
+        mockNewLabelData,
+      );
+
+      expect(result).toStrictEqual(new LabelDto(mockLabelUpdated));
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(prismaService.label.update).toHaveBeenCalledWith({
+        where: { id: mockLabelId },
+        data: {
+          color: mockNewLabelData.color,
+          name: mockNewLabelData.name,
+        },
+      });
     });
   });
 });
