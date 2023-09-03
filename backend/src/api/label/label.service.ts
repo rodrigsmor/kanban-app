@@ -68,7 +68,30 @@ export class LabelService {
     boardId: number,
     newLabelData: EditLabelDto,
   ): Promise<LabelDto> {
-    return null;
+    const hasAuthorization =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
+
+    if (!hasAuthorization)
+      throw new UnauthorizedException(
+        'you do not have authorization to edit this board',
+      );
+
+    try {
+      const labelUpdated = await this.prisma.label.update({
+        where: { id: labelId },
+        data: {
+          ...(newLabelData.color && { color: newLabelData.color }),
+          ...(newLabelData.name && { name: newLabelData.name }),
+        },
+      });
+
+      return new LabelDto(labelUpdated);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error?.message ||
+          'An error occurred while updating the label, please try again later',
+      );
+    }
   }
 
   async deleteLabel(
