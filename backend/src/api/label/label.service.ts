@@ -1,7 +1,11 @@
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LabelDto } from '../card/dto';
 import { CreateLabelDto, EditLabelDto } from './dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { BoardRepository } from '../../common/repositories/board.repository';
 
 @Injectable()
@@ -30,7 +34,32 @@ export class LabelService {
     boardId: number,
     newLabel: CreateLabelDto,
   ): Promise<LabelDto[]> {
-    return null;
+    const hasAuthorization =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
+
+    if (!hasAuthorization)
+      throw new UnauthorizedException(
+        'you do not have authorization to edit this board',
+      );
+
+    try {
+      await this.prisma.label.create({
+        data: {
+          name: newLabel.name,
+          color: newLabel.color,
+          boardId,
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error?.message ||
+          'An error occurred while creating the label, please try again later',
+      );
+    }
+
+    const labels = await this.boardRepository.findBoardLabels(boardId);
+
+    return labels.map((label) => new LabelDto(label));
   }
 
   async editLabel(
