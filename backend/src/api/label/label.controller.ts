@@ -114,7 +114,7 @@ export class LabelController {
     @Query('boardId') boardId: number,
     @Body() deleteLabels: DeleteLabelsDto,
   ): Promise<LabelDto[]> {
-    return this.labelService.deleteLabel(
+    return this.labelService.deleteLabels(
       userId,
       deleteLabels.labelsIds,
       boardId,
