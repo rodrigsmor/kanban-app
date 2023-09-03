@@ -1,11 +1,14 @@
+import {
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Label } from '@prisma/client';
 import { LabelDto } from '../api/card/dto';
 import { CreateLabelDto } from '../api/label/dto';
-import { UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LabelService } from '../api/label/label.service';
 import { BoardRepository } from '../common/repositories/board.repository';
-import { Label } from '@prisma/client';
 
 describe('LabelService', () => {
   let labelService: LabelService;
@@ -117,7 +120,7 @@ describe('LabelService', () => {
   });
 
   describe('createLabel', () => {
-    it('should throw UnauthorizedException if the current user is has no permission to edit', async () => {
+    it('should throw UnauthorizedException if the current user has no permission to edit', async () => {
       jest
         .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(false);
@@ -150,7 +153,9 @@ describe('LabelService', () => {
       jest
         .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockRejectedValueOnce(
-          new Error('the user provided is not a member of this board'),
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
         );
       jest.spyOn(prismaService.label, 'create').mockResolvedValueOnce(null);
       jest
@@ -175,6 +180,77 @@ describe('LabelService', () => {
         expect(prismaService.label.create).not.toBeCalled();
         expect(boardRepository.findBoardLabels).not.toBeCalled();
       }
+    });
+
+    it('should throw InternalServerException if an error occurs while creating the label', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(prismaService.label, 'create')
+        .mockRejectedValueOnce(
+          new Error(
+            'An error occurred while creating the label, please try again later',
+          ),
+        );
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.createLabel(
+          mockUserId,
+          mockBoardId,
+          mockCreateCardDto,
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'An error occurred while creating the label, please try again later',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.create).toBeCalledWith({
+          data: {
+            name: mockCreateCardDto.name,
+            color: mockCreateCardDto.color,
+            boardId: mockBoardId,
+          },
+        });
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
+    });
+
+    it('should create the label provided and return an array of all board labels including it', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest.spyOn(prismaService.label, 'create').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(mockLabels);
+
+      const result = await labelService.createLabel(
+        mockUserId,
+        mockBoardId,
+        mockCreateCardDto,
+      );
+
+      expect(result).toStrictEqual(mockLabelsDto);
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(prismaService.label.create).toBeCalledWith({
+        data: {
+          name: mockCreateCardDto.name,
+          color: mockCreateCardDto.color,
+          boardId: mockBoardId,
+        },
+      });
+      expect(boardRepository.findBoardLabels).toBeCalledWith(mockBoardId);
     });
   });
 });
