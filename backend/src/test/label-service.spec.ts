@@ -385,4 +385,37 @@ describe('LabelService', () => {
       });
     });
   });
+
+  describe('deleteLabel', () => {
+    const mockDeleteIds = [mockLabelId];
+    const mockUpdatedLabels: Label[] = mockLabels.splice(2, 1);
+    const mockUpdatedLabelsDto: LabelDto[] = mockUpdatedLabels.map(
+      (label) => new LabelDto(label),
+    );
+
+    it('should throw UnauthorizedException if user has no permission to edit', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(false);
+      jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.deleteLabels(mockUserId, mockDeleteIds, mockBoardId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'you do not have authorization to edit this board',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(prismaService.label.deleteMany).not.toBeCalled();
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
+    });
+  });
 });
