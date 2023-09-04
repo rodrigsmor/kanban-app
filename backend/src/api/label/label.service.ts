@@ -1,6 +1,7 @@
 import {
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { LabelDto } from '../card/dto';
@@ -99,10 +100,30 @@ export class LabelService {
     labelsIds: number[],
     boardId: number,
   ): Promise<LabelDto[]> {
+    const hasAuthorization =
+      await this.boardRepository.isMemberAuthorizedToEdit(userId, boardId);
+
+    if (!hasAuthorization)
+      throw new UnauthorizedException(
+        'you do not have authorization to edit this board',
+      );
+
+    const areAllLabelsOnBoard = await this.allLabelsExistOnBoard(
+      labelsIds,
+      boardId,
+    );
+
+    if (!areAllLabelsOnBoard)
+      throw new NotFoundException('Some labels do not seem to exist');
+
     try {
       await this.prisma.label.deleteMany({
         where: { id: { in: labelsIds } },
       });
+
+      const labels = await this.boardRepository.findBoardLabels(boardId);
+
+      return labels.map((label) => new LabelDto(label));
     } catch (error) {
       throw new InternalServerErrorException(
         error?.message ||
