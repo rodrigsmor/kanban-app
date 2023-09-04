@@ -48,7 +48,6 @@ describe('BoardService', () => {
   const mockColumns: ColumnPrismaType = {
     boardId: 152,
     cards: [],
-    cover: '/a-mock-cover.jpg',
     createdAt: new Date(2023, 6, 31),
     id: 0,
     title: 'New column',

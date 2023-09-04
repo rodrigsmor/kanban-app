@@ -56,7 +56,6 @@ model Column {
   title             String
   boardId           Int
   board             Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  cover             String?
   cards             Card[]
   createdAt         DateTime  @default(now())
   updateAt          DateTime  @updatedAt

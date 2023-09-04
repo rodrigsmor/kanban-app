@@ -73,7 +73,6 @@ describe('CardService', () => {
     boardId: mockBoardId,
     columnIndex: 0,
     cards: [],
-    cover: './path-to-cover',
     title: 'Column of new tasks',
     createdAt: new Date(2023, 8, 4),
     updateAt: new Date(2024, 2, 12),

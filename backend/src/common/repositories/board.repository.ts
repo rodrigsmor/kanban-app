@@ -1,3 +1,4 @@
+import { Label } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { BoardRolesEnum } from '../../utils/enums/board-roles.enum';
@@ -43,6 +44,14 @@ const membershipIncludeTemplate = {
 @Injectable()
 export class BoardRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findBoardLabels(boardId: number): Promise<Label[]> {
+    return await this.prisma.label.findMany({
+      where: {
+        boardId,
+      },
+    });
+  }
 
   async findBoardById(
     boardId: number,
