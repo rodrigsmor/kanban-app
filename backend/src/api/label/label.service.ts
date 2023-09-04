@@ -94,11 +94,37 @@ export class LabelService {
     }
   }
 
-  async deleteLabel(
+  async deleteLabels(
     userId: number,
     labelsIds: number[],
     boardId: number,
   ): Promise<LabelDto[]> {
+    try {
+      await this.prisma.label.deleteMany({
+        where: { id: { in: labelsIds } },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error?.message ||
+          'An error occurred while deleting the labels, please try again later',
+      );
+    }
     return null;
+  }
+
+  async allLabelsExistOnBoard(
+    labelsIds: number[],
+    boardId: number,
+  ): Promise<boolean> {
+    const labels = await this.prisma.label.findMany({
+      where: {
+        boardId,
+        id: {
+          in: labelsIds,
+        },
+      },
+    });
+
+    return labels?.length === labelsIds.length;
   }
 }
