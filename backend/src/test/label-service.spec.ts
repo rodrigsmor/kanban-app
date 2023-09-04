@@ -1,5 +1,6 @@
 import {
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -397,6 +398,9 @@ describe('LabelService', () => {
       jest
         .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
         .mockResolvedValueOnce(false);
+      jest
+        .spyOn(labelService, 'allLabelsExistOnBoard')
+        .mockRejectedValueOnce(null);
       jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardLabels')
@@ -413,9 +417,142 @@ describe('LabelService', () => {
           mockUserId,
           mockBoardId,
         );
+        expect(labelService.allLabelsExistOnBoard).not.toBeCalled();
         expect(prismaService.label.deleteMany).not.toBeCalled();
         expect(boardRepository.findBoardLabels).not.toBeCalled();
       }
+    });
+
+    it('should throw UnauthorizedException if user is not a board member', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockRejectedValueOnce(
+          new UnauthorizedException(
+            'the user provided is not a member of this board',
+          ),
+        );
+      jest
+        .spyOn(labelService, 'allLabelsExistOnBoard')
+        .mockRejectedValueOnce(null);
+      jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.deleteLabels(mockUserId, mockDeleteIds, mockBoardId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        expect(error.message).toStrictEqual(
+          'the user provided is not a member of this board',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(labelService.allLabelsExistOnBoard).not.toBeCalled();
+        expect(prismaService.label.deleteMany).not.toBeCalled();
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
+    });
+
+    it('should throw a NotFoundException if any of the labels do not exist in the boad', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(labelService, 'allLabelsExistOnBoard')
+        .mockRejectedValueOnce(false);
+      jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.deleteLabels(mockUserId, mockDeleteIds, mockBoardId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toStrictEqual('Some labels do not seem to exist');
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(labelService.allLabelsExistOnBoard).toBeCalledWith(
+          mockDeleteIds,
+          mockBoardId,
+        );
+        expect(prismaService.label.deleteMany).not.toBeCalled();
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
+    });
+
+    it('should throw InternalServerError if an error occurs while deleting the labels', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(labelService, 'allLabelsExistOnBoard')
+        .mockRejectedValueOnce(true);
+      jest
+        .spyOn(prismaService.label, 'deleteMany')
+        .mockRejectedValueOnce(new Error(''));
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(null);
+
+      try {
+        await labelService.deleteLabels(mockUserId, mockDeleteIds, mockBoardId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalServerErrorException);
+        expect(error.message).toStrictEqual(
+          'An error occurred while deleting the labels, please try again later',
+        );
+        expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+          mockUserId,
+          mockBoardId,
+        );
+        expect(labelService.allLabelsExistOnBoard).toBeCalledWith(
+          mockDeleteIds,
+          mockBoardId,
+        );
+        expect(prismaService.label.deleteMany).toBeCalledWith({
+          where: { id: { in: mockDeleteIds } },
+        });
+        expect(boardRepository.findBoardLabels).not.toBeCalled();
+      }
+    });
+
+    it('should throw InternalServerError if an error occurs while deleting the labels', async () => {
+      jest
+        .spyOn(boardRepository, 'isMemberAuthorizedToEdit')
+        .mockResolvedValueOnce(true);
+      jest
+        .spyOn(labelService, 'allLabelsExistOnBoard')
+        .mockRejectedValueOnce(true);
+      jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
+      jest
+        .spyOn(boardRepository, 'findBoardLabels')
+        .mockResolvedValueOnce(mockUpdatedLabels);
+
+      const result = await labelService.deleteLabels(
+        mockUserId,
+        mockDeleteIds,
+        mockBoardId,
+      );
+
+      expect(result).toStrictEqual(mockUpdatedLabelsDto);
+      expect(boardRepository.isMemberAuthorizedToEdit).toBeCalledWith(
+        mockUserId,
+        mockBoardId,
+      );
+      expect(labelService.allLabelsExistOnBoard).toBeCalledWith(
+        mockDeleteIds,
+        mockBoardId,
+      );
+      expect(prismaService.label.deleteMany).toBeCalledWith({
+        where: { id: { in: mockDeleteIds } },
+      });
+      expect(boardRepository.findBoardLabels).toBeCalledWith(mockBoardId);
     });
   });
 });
