@@ -389,7 +389,7 @@ describe('LabelService', () => {
 
   describe('deleteLabel', () => {
     const mockDeleteIds = [mockLabelId];
-    const mockUpdatedLabels: Label[] = mockLabels.splice(2, 1);
+    const mockUpdatedLabels: Label[] = [...mockLabels].splice(2, 1);
     const mockUpdatedLabelsDto: LabelDto[] = mockUpdatedLabels.map(
       (label) => new LabelDto(label),
     );
@@ -462,7 +462,7 @@ describe('LabelService', () => {
         .mockResolvedValueOnce(true);
       jest
         .spyOn(labelService, 'allLabelsExistOnBoard')
-        .mockRejectedValueOnce(false);
+        .mockResolvedValueOnce(false);
       jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardLabels')
@@ -492,7 +492,7 @@ describe('LabelService', () => {
         .mockResolvedValueOnce(true);
       jest
         .spyOn(labelService, 'allLabelsExistOnBoard')
-        .mockRejectedValueOnce(true);
+        .mockResolvedValueOnce(true);
       jest
         .spyOn(prismaService.label, 'deleteMany')
         .mockRejectedValueOnce(new Error(''));
@@ -528,7 +528,7 @@ describe('LabelService', () => {
         .mockResolvedValueOnce(true);
       jest
         .spyOn(labelService, 'allLabelsExistOnBoard')
-        .mockRejectedValueOnce(true);
+        .mockResolvedValueOnce(true);
       jest.spyOn(prismaService.label, 'deleteMany').mockResolvedValueOnce(null);
       jest
         .spyOn(boardRepository, 'findBoardLabels')
