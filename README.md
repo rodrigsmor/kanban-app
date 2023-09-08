@@ -37,6 +37,7 @@ Ruma is an agile Kanban-based project and task management web app. On this platf
   <img src="https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white" alt="Prisma" />
   <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens" alt="JWT Authentication" />
   <img src="https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white" alt="Swagger" />
+  <img src="https://img.shields.io/badge/i18n-0781b5?style=for-the-badge" alt="i18n" />
 </div>
 
 ## 📥 Installation
