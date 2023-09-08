@@ -1,5 +1,7 @@
-export interface I18nTranslations {
-  test: {
-    HELLO: string;
+export type I18nTranslations = {
+  authentication: {
+    signup: {
+      isString: string;
+    };
   };
-}
+};
