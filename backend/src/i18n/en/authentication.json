@@ -1,0 +1,5 @@
+{
+  "signup": {
+    "isString": "your first name should be a string entry."
+  }
+}
