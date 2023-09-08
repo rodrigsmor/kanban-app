@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { i18nValidationMessage } from 'nestjs-i18n';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { I18nTranslations } from '../../utils/@types/i18n-types';
 
 export class SignupDto {
   @ApiProperty({
@@ -7,7 +9,11 @@ export class SignupDto {
     required: true,
     description: 'the first name of the user',
   })
-  @IsString({ message: 'your first name should be a string entry.' })
+  @IsString({
+    message: i18nValidationMessage<I18nTranslations>(
+      'authentication.signup.isString',
+    ),
+  })
   @IsNotEmpty({ message: 'you must enter your name in order to register.' })
   firstName: string;
 
