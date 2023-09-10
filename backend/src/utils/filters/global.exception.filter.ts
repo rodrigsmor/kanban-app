@@ -50,8 +50,10 @@ export class GlobalExecptionFilter implements ExceptionFilter {
     let message =
       exception?.response?.message ?? getErrorMessage(exception).split(': ')[1];
 
-    if (exception?.response?.message) {
-      message = i18n.translate(message[0]);
+    if (Array.isArray(message)) {
+      message = exception?.response?.message.map((path: any) => {
+        return i18n.translate(path);
+      });
     }
 
     response.status(code).json({
