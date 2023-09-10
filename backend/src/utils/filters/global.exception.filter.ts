@@ -7,6 +7,9 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { IncomingMessage } from 'http';
+import { I18nContext } from 'nestjs-i18n';
+import { I18nTranslations } from '../@types/i18n.translations';
+import { i18nPaths } from '../constants';
 
 export const getStatusCode = (exception: unknown) => {
   return exception instanceof HttpException
@@ -18,6 +21,22 @@ export const getErrorMessage = (exception: unknown): string => {
   return String(exception);
 };
 
+async function isI18nPath(path: string): Promise<boolean> {
+  if (!path.includes('.')) return false;
+
+  const keys = path.split('.');
+  let currentObj = i18nPaths;
+
+  for (const key of keys) {
+    if (!currentObj.hasOwnProperty(key)) {
+      return false;
+    }
+    currentObj = currentObj[key];
+  }
+
+  return true;
+}
+
 @Catch()
 export class GlobalExecptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
@@ -26,8 +45,14 @@ export class GlobalExecptionFilter implements ExceptionFilter {
     const request = context.getRequest<IncomingMessage>();
     const code = getStatusCode(exception);
     const except = getErrorMessage(exception).split(': ')[0];
-    const message =
+
+    const i18n = I18nContext.current<I18nTranslations>(host);
+    let message =
       exception?.response?.message ?? getErrorMessage(exception).split(': ')[1];
+
+    if (exception?.response?.message) {
+      message = i18n.translate(message[0]);
+    }
 
     response.status(code).json({
       timestamp: new Date().toISOString(),
