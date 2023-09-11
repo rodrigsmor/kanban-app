@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { i18nPaths } from '../../utils/constants/i18n.paths';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class SignupDto {
   @ApiProperty({
@@ -7,8 +8,10 @@ export class SignupDto {
     required: true,
     description: 'the first name of the user',
   })
-  @IsString({ message: 'your first name should be a string entry.' })
-  @IsNotEmpty({ message: 'you must enter your name in order to register.' })
+  @IsString({
+    message: i18nPaths.dto.auth.firstName.IS_STRING,
+  })
+  @IsNotEmpty({ message: i18nPaths.dto.auth.firstName.IS_NOT_EMPTY })
   firstName: string;
 
   @ApiProperty({
@@ -16,8 +19,8 @@ export class SignupDto {
     required: true,
     description: 'the last name of the user',
   })
-  @IsString({ message: 'your last name should be a string entry.' })
-  @IsNotEmpty({ message: 'your last name is required to register.' })
+  @IsString({ message: i18nPaths.dto.auth.lastName.IS_STRING })
+  @IsNotEmpty({ message: i18nPaths.dto.auth.lastName.IS_NOT_EMPTY })
   lastName: string;
 
   @ApiProperty({
@@ -26,19 +29,22 @@ export class SignupDto {
     description: 'the e-mail address of the user',
   })
   @IsEmail(undefined, {
-    message: 'the e-mail entered is not a valid entry.',
+    message: i18nPaths.dto.auth.email.IS_EMAIL,
   })
   @IsNotEmpty({
-    message: 'to validate your data, your email address is required.',
+    message: i18nPaths.dto.auth.email.IS_NOT_EMPTY,
   })
-  @IsString({ message: 'the e-mail should be a string entry.' })
+  @IsString({ message: i18nPaths.dto.auth.email.IS_STRING })
   email: string;
 
   @ApiProperty({
     required: true,
     description: 'the password of the user account',
   })
-  @IsString({ message: 'your password should be a string entry.' })
-  @IsNotEmpty({ message: 'it is not possible to use an empty password.' })
+  @IsNotEmpty({ message: i18nPaths.dto.auth.password.IS_NOT_EMPTY })
+  @IsString({ message: i18nPaths.dto.auth.password.IS_STRING })
+  @MinLength(8, {
+    message: i18nPaths.dto.auth.password.MIN,
+  })
   password: string;
 }

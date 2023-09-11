@@ -1,0 +1,22 @@
+{
+  "auth": {
+    "firstName": {
+      "IS_STRING": "seu primeiro nome precisa ser uma 'string'",
+      "IS_NOT_EMPTY": "você deve inserir seu primeiro nome para se registrar."
+    },
+    "lastName": {
+      "IS_STRING": "seu sobrenome precisa ser uma 'string'",
+      "IS_NOT_EMPTY": "para registrar é preciso informar seu sobrenome"
+    },
+    "email": {
+      "IS_STRING": "o e-mail precisa ser uma 'string'",
+      "IS_NOT_EMPTY": "seu endereço de e-mail é obrigatório para validar seus dados",
+      "IS_EMAIL": "o e-mail providenciado não é valido."
+    },
+    "password": {
+      "IS_STRING": "sua senha precisa ser um 'string'",
+      "IS_NOT_EMPTY": "a senha não pode estar vazia.",
+      "MIN": "a senha precisa ter no mínimo 8 caracteres."
+    }
+  }
+}

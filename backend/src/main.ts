@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { json, urlencoded } from 'express';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { I18nMiddleware, I18nValidationExceptionFilter } from 'nestjs-i18n';
 import { GlobalExecptionFilter } from './utils/filters/global.exception.filter';
 
 async function bootstrap() {
@@ -11,6 +12,7 @@ async function bootstrap() {
     bodyParser: true,
   });
 
+  app.use(I18nMiddleware);
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const config = new DocumentBuilder()
@@ -30,6 +32,8 @@ async function bootstrap() {
   app.enableCors();
   app.use(json({ limit: '100mb' }));
   app.use(urlencoded({ limit: '100mb', extended: true }));
+
+  app.useGlobalFilters(new I18nValidationExceptionFilter());
   app.useGlobalFilters(new GlobalExecptionFilter());
 
   app.use('/uploads', express.static('uploads'));

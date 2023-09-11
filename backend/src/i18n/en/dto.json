@@ -1,0 +1,22 @@
+{
+  "auth": {
+    "firstName": {
+      "IS_STRING": "your first name must be a string entry",
+      "IS_NOT_EMPTY": "you must enter your first name in order to register."
+    },
+    "lastName": {
+      "IS_STRING": "your last name must be a string entry.",
+      "IS_NOT_EMPTY": "your last name is required to register."
+    },
+    "email": {
+      "IS_STRING": "the e-mail must be a string entry.",
+      "IS_NOT_EMPTY": "to validate your data, your email address is required.",
+      "IS_EMAIL": "the e-mail entered is not a valid entry."
+    },
+    "password": {
+      "IS_STRING": "your password must be a string entry.",
+      "IS_NOT_EMPTY": "your password can not be empty.",
+      "MIN": "the password must be at least 8 characters long"
+    }
+  }
+}
